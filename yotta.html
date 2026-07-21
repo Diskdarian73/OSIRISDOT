@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Yotta</title>
+    <style>
+::-webkit-scrollbar {
+  width: 0.625rem;
+  height: 0.625rem;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #111;
+  border-radius: 0.3125rem;
+  box-shadow: inset 0.125rem 0.125rem 0.125rem rgba(255, 255, 255, 0.25),
+    inset -0.125rem -0.125rem 0.125rem rgba(0, 0, 0, 0.25);
+  cursor: default;
+}
+
+::-webkit-scrollbar-track {
+  background: #333;
+}
+
+::selection {
+  background: #fff;
+  color: #333;
+}
+
+html,
+body {
+  height: 100vh;
+  height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  display: grid;
+  grid-template-rows: calc(100dvh - 4rem) 4rem;
+  font-family: system-ui, sans-serif;
+}
+
+canvas,
+.editor,
+#controls {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+canvas {
+  --canvas-z-index: -1;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: black;
+  touch-action: none;
+  z-index: var(--canvas-z-index);
+}
+
+.editor,
+.overlay,
+#error {
+  font-family: 'Courier New', Courier, monospace;
+  background: repeating-linear-gradient(0deg, #000a, #1119, #000a .25rem);
+  padding: 1em;
+}
+
+.editor {
+  color: #fefefe;
+  tab-size: 2;
+  border: none;
+  resize: none;
+}
+
+.editor:focus {
+  outline: none;
+}
+
+#error {
+  grid-row: 2;
+  grid-column: 1;
+  margin: 0;
+  padding-block: 0;
+  padding-top: .5em;
+  color: firebrick;
+  overflow: auto;
+  text-wrap: pretty;
+}
+
+#indicator {
+  visibility: hidden;
+  position: absolute;
+  top: calc(var(--top, 0px) - var(--scroll-top, 0px));
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 10px solid firebrick;
+  transform: translateY(-25%);
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+}
+
+.editor,
+.overlay {
+  font-size: 1rem;
+  line-height: 1.2;
+  white-space: pre;
+}
+
+#controls {
+  position: fixed;
+  top: 1em;
+  right: 2em;
+}
+
+.controls {
+  position: relative;
+  display: flex;
+  gap: 1.5em;
+  padding: .5em 1.25em;
+  background: #1111;
+  border-radius: 4px;
+}
+
+.controls::before,
+.controls::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  transform: scale(.95);
+  border-radius: inherit;
+  opacity: 0;
+}
+
+.controls::before {
+  background: #aef;
+  animation: pulse 2s infinite;
+}
+
+.controls::after {
+  background: #fefefe66;
+  transition: transform 200ms ease-in-out;
+}
+
+.controls:hover::before,
+.controls:hover::after {
+  opacity: 1;
+}
+
+.controls:hover::before {
+  transform: scale(.98);
+  filter: blur(2px);
+}
+
+.controls:hover::after {
+  transform: scale(1.025, 1.1);
+}
+
+.controls:hover {
+  background: #111f;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.0125);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.hidden {
+  display: none !important;
+}
+
+.opaque {
+  opacity: 1 !important;
+  background: #111 !important;
+}
+
+input {
+  all: unset;
+  opacity: .2;
+  filter: saturate(0) invert(1);
+  cursor: pointer;
+  transition: opacity 200ms ease-in-out;
+  padding: .25em .5em;
+}
+
+input:hover {
+  opacity: 1;
+}
+
+.icon {
+  text-align: center;
+  line-height: 1;
+}
+
+#btnToggleView {
+  width: 1.25em;
+}
+
+#btnToggleView::after {
+  content: '👁';
+}
+
+#btnToggleView:checked::after {
+  content: '✏️';
+}
+
+#btnToggleResolution::after {
+  content: '1️⃣';
+}
+
+#btnToggleResolution:checked::after {
+  content: '2️⃣';
+}
+
+#btnReset::after {
+  content: '⏮️';
+}
+
+#btnPlayStop::after {
+  content: '▶️';
+}
+
+#btnPlayStop:checked::after {
+  content: '⏸️';
+}
+    </style>
+  </head>
+
+  <body>
+  <canvas id="canvas"></canvas>
+<textarea id="codeEditor" class="editor" spellcheck="false" autocorrect="off" autocapitalize="off" translate="no" oninput="render()"></textarea>
+<pre id="error"></pre>
+<div id="indicator"></div>
+<div id="controls">
+  <div class="controls">
+    <input id="btnToggleView" class="icon" type="checkbox" name="toggleView" onclick="toggleView()">
+    <input id="btnToggleResolution" class="icon" type="checkbox" name="toggleResolution" onchange="toggleResolution()">
+    <input id="btnReset" class="icon" type="checkbox" name="reset" onclick="reset()">
+    <input id="btnPlayStop" class="icon" type="checkbox" name="playStop" onclick="togglePlayStop()">
+  </div>
+</div>
+<script type="x-shader/x-fragment">#version 300 es
+/*********
+* made by Matthias Hurrle (@atzedent)
+*/
+precision highp float;
+out vec4 O;
+uniform float time;
+uniform vec2 resolution;
+uniform vec2 wheel;
+#define FC gl_FragCoord.xy
+#define R resolution
+#define T (time+wheel.y/1e3)
+#define N normalize
+#define S smoothstep
+#define MN min(R.x,R.y)
+#define LP vec3(-2,8,-2)
+#define EDGESIZE 42e-4
+#define hue(a) (.5+.5*sin(3.14*(a)+vec3(1,2,3)))
+// Spline setup for camera path.
+// Reference: https://www.shadertoy.com/view/4s3SRN
+vec3 cp[14];
+void initCam() {
+	const float a=2.*.96, b=2.*a;
+	cp[0] =vec3(0);
+	cp[1] =vec3(0,0,b);
+	cp[2] =vec3(a,0,b);
+	cp[3] =vec3(a,0,a);
+	cp[4] =vec3(a,-a*1.2,a);
+	cp[5] =vec3(-a,-a,a);
+	cp[6] =vec3(-a,0,a);
+	cp[7] =vec3(-a,0,0);
+	cp[8] =vec3(0);
+	cp[9] =vec3(0,0,-b);
+	cp[10]=vec3(0,a,-b);
+	cp[11]=vec3(-a,a,-b);
+	cp[12]=vec3(-a,0,-b);
+	cp[13]=vec3(-a,0,0);
+}
+vec3 catmull(vec3 a, vec3 b, vec3 c, vec3 d, float t){
+	return (((-a+b*3.-c*3.+d)*t*t*t + (a*2.- b*5.+c*4.-d)*t*t + (-a+c)*t + b*2.)*.5);
+}
+vec3 camPath(float t){
+	const int n=14;
+	const float k=float(n);
+	t=fract(t/k)*k;
+	float sn=floor(t), st=t-sn;
+	if (sn==.0) return catmull(cp[n-1], cp[0], cp[1], cp[2], st);
+	for (int i=1; i<n-2; i++) {
+		if (sn==float(i)) return catmull(cp[i-1], cp[i], cp[i+1], cp[i+2], st);
+	}
+	if (sn==k-2.) return catmull(cp[n-3], cp[n-2], cp[n-1], cp[0], st);
+	if (sn==k-1.) return catmull(cp[n-2], cp[n-1], cp[0], cp[1], st);
+	return vec3(0);
+}
+float rnd(vec3 p) {
+	p=fract(p*vec3(12.9898,78.233,156.345));
+	p+=dot(p,p+34.56);
+	return fract(p.x*p.y*p.z);
+}
+float smin(float a, float b, float k) {
+	k*=log(2.);
+	float x=b-a;
+	return a+x/(1.-exp2(x/k));
+}
+float box(vec3 p, float s) {
+	p=abs(p)-s;
+	return length(max(p,.0))+min(.0,max(max(p.x,p.y),p.z));
+}
+#define ZERO (time*.0)
+float map(vec3 p) {
+	float e=length(vec2(fract(p.z)-.5,p.y-1.))-.1;
+	p.xz=mod(p.xz+1.,2.)-1.;
+	float d=box(p,1.), f=1.;
+	for(float i=ZERO; i<5.; i++) {
+		vec3 a=mod(p*f,2.)-1., r=abs(1.-3.*abs(a));
+		f*=2.25;
+		float
+		da=max(r.x,r.y),
+		db=max(r.y,r.z),
+		dc=max(r.z,r.x);
+		d=max(d,(min(da,min(db,dc))-1.)/f);
+	}
+	return smin(d,e,1e-2)+2e-3;
+}
+vec3 norm(vec3 p) {
+	float h=1e-3; vec2 k=vec2(-1,1);
+	return N(
+		k.xyy*map(p+k.xyy*h)+
+		k.yxy*map(p+k.yxy*h)+
+		k.yyx*map(p+k.yyx*h)+
+		k.xxx*map(p+k.xxx*h)
+	);
+}
+bool march(inout vec3 p, vec3 rd, out float dd, out float edge, out float i) {
+	bool near;
+	// low quality on the outside
+	float maxd=abs(p.y)>1.?130.:800.;
+	for (; i++<maxd;) {
+		float d=map(p);
+		if (abs(d)<1e-3) return true;
+		if (d>100.) return false;
+		if (near && d>EDGESIZE) edge=1.;
+		if (d<EDGESIZE) near=true;
+		p+=rd*d*.5;
+		dd*=d*.5;
+	}
+}
+float calcAO(vec3 p, vec3 n) {
+	float occ=.0, sca=1.;
+	for (float i=.0; i<5.; i++) {
+		float
+		h=.01+i*.05,
+		d=map(p+h*n);
+		occ+=(h-d)*sca;
+		sca*=.95;
+		if (occ>.35) break;
+	}
+	return clamp(1.-3.*occ,.0,1.);
+}
+float getao(vec3 p, vec3 n, float dist) {
+	return clamp(map(p+n*dist)/dist,.0,1.);
+}
+vec3 dir(vec2 uv, vec3 ro, vec3 t, float z) {
+	vec3 up=vec3(0,1,0),
+	f=N(t-ro),
+	r=N(cross(up,f)),
+	u=cross(f,r),
+	c=f*z,
+	i=c+uv.x*r+uv.y*u,
+	d=N(i);
+	return d;
+}
+vec3 render(vec2 uv) {
+	initCam();
+	float speed=T*.25;
+	vec3 col=vec3(0),
+	p=camPath(-speed+.5), ro=p,
+	ta=camPath(-speed),
+	rd=dir(uv,p,ta,.6);
+	float dd, i, edge;
+	if (march(p,rd,dd,edge,i)) {
+		float x=mix(.8,1.,rnd(p)), lf=S(80.,30.,length(p.z));
+		vec3 n=norm(p)*x, lp=vec3(LP.x,LP.y+lf,LP.z), l=N(lp-p);
+		float ao=calcAO(p,n), amb=.8+.2*n.y, ld=distance(lp,p),
+		ldd=distance(ro,p), dif=clamp(dot(l,n),.0,1.),
+		atten=1./(1.+ldd*.5+ldd*ldd*.25);
+		if (abs(p.y)<.992) {
+			ao*=(n.y*.5+.55);
+			col+=S(-.1,1.,amb*ao)+dif*ao*atten;
+			col+=atten*pow(clamp(dot(N(ro-p),n),.0,1.),.8);
+		} else col+=dif*ao;
+		col+=clamp(dot(-rd,l),.0,1.)*ao*atten;
+		col*=vec3(1,.65,.5)+.3*amb*ao*atten;
+		col*=tanh(ao*ao);
+		// outlines
+		float fog=1.-clamp(dd/200.,.0,1.), eo=getao(p,n,EDGESIZE);;
+		if(eo<.9) edge=max(edge,max(1.,fog));
+		eo=getao(p,n,-EDGESIZE);
+		if(eo<.9) edge=max(edge,max(1.,fog));
+		float fres=pow(clamp(1.+dot(rd,n),.0,1.),5.);
+		// dark
+		col*=S(2.,.0,edge)*(1.-fres);
+		// light
+		vec3 dp=abs(p-ro);
+    float ll=.3/tan(length(dp))+T;
+		dp=(.5+.5*cos(.78*T-vec3(0,-2,3)*fract(ll)-.5));
+		dp=p.y>1.01?vec3(1):.02/dp.bgg;
+		col=mix(col,fres*dp,S(.5,3.,edge));
+		// fog
+		col=S(-.5,2.,col);
+	}
+	// shine
+	float k=max(.3,1.-distance(LP,ro));
+	col+=hue(k*k*1.57+1.5)*k*.6;
+	// color grading
+	col=mix(col,vec3(1,.95,.9),S(.0,15.,distance(p,ro)));
+	col+=S(-1.,2.,clamp(i/300.,.0,1.))*k*vec3(1,.65,.5);
+	col=S(-.2,.8,col*1.2);
+	col=tanh(col*col*col);
+	col=sqrt(col);
+	// vignette
+	vec2 c=FC/R;
+	c*=1.-c.yx;
+	float vig=c.x*c.y*25.;
+	vig=pow(vig,.25);
+	col*=vig;
+	col=mix(col,col*col,S(1.,-1.,clamp(vig,.0,1.)));
+	return col*vec3(1,.85,.65);
+}
+void main() {
+	vec2 uv=(FC-.5*R)/MN;
+	vec3 col=render(uv);
+	O=vec4(col,1);
+}</script>
+<script>
+/*********
+ * made by Matthias Hurrle (@atzedent)
+ */
+let editMode = false // set to false to hide the code editor on load
+let playOnLoad = true // set to true to start the shader automatically on load, otherwise click the play button
+let resolution = .5 // set 1 for full resolution or to .5 to start with half resolution on load
+let renderDelay = 1000 // delay in ms before rendering the shader after a change
+let startTime = 0
+let elapsedTime = 0
+let interactionFrameRequested = false
+let dpr = Math.max(1, resolution * window.devicePixelRatio)
+let frm, source, editor, renderer, pointers
+window.onload = init
+
+function resize() {
+  const { innerWidth: width, innerHeight: height } = window
+
+  canvas.width = width * dpr
+  canvas.height = height * dpr
+
+  if (renderer) {
+    renderer.updateScale(dpr)
+    renderInteractionFrame()
+  }
+}
+function toggleView() {
+  editor.hidden = btnToggleView.checked
+  canvas.style.setProperty('--canvas-z-index', btnToggleView.checked ? 0 : -1)
+}
+function reset() {
+  let shader = source
+  editor.text = shader ? shader.textContent : renderer.defaultSource
+  renderThis()
+}
+function toggleResolution() {
+  resolution = btnToggleResolution.checked ? .5 : 1
+  dpr = Math.max(1, resolution * window.devicePixelRatio)
+  pointers.updateScale(dpr)
+  resize()
+}
+function update() {
+  renderer.updateMouse(pointers.first)
+  renderer.updatePointerCount(pointers.count)
+  renderer.updatePointerCoords(pointers.coords)
+  renderer.updateMove(pointers.move)
+  renderer.updateZoom(pointers.zoomed)
+  renderer.updateWheel(pointers.wheel)
+}
+function loop(now) {
+  elapsedTime = now - startTime
+  update()
+  renderer.render(elapsedTime)
+  frm = requestAnimationFrame(loop)
+}
+async function renderThis() {
+  editor.clearError()
+  const result = renderer.test(editor.text)
+
+  if (result) {
+    editor.setError(result)
+  } else {
+    renderer.updateShader(editor.text)
+  }
+  const wasPlaying = !!frm
+  cancelAnimationFrame(frm) // Always cancel the previous frame!
+  frm = null
+
+  if (wasPlaying || playOnLoad) {
+    play()
+  } else {
+    renderer.render(elapsedTime)
+  }
+}
+const play = () => {
+  if (frm) return
+  startTime = performance.now() - elapsedTime
+  loop(performance.now())
+  btnPlayStop.checked = true
+}
+const stop = () => {
+  if (frm) {
+    elapsedTime = performance.now() - startTime
+  }
+  cancelAnimationFrame(frm)
+  frm = null
+  btnPlayStop.checked = false
+}
+function togglePlayStop() {
+  if (btnPlayStop.checked) {
+    playOnLoad = true
+    play()
+  } else {
+    playOnLoad = false
+    stop()
+  }
+}
+const debounce = (fn, delay) => {
+  let timerId
+  return (...args) => {
+    clearTimeout(timerId)
+    timerId = setTimeout(() => fn.apply(this, args), delay)
+  }
+}
+const render = debounce(renderThis, renderDelay)
+function renderInteractionFrame() {
+  if (frm || interactionFrameRequested || !renderer || !pointers) return
+  interactionFrameRequested = true
+  requestAnimationFrame(() => {
+    interactionFrameRequested = false
+    if (frm) return
+    update()
+    renderer.render(elapsedTime)
+  })
+}
+function init() {
+  source = document.querySelector("script[type='x-shader/x-fragment']")
+
+  document.title = "Elevator Visual"
+
+  renderer = new Renderer(canvas, dpr)
+  pointers = new PointerHandler(canvas, dpr)
+  editor   = new Editor(codeEditor, error, indicator)
+  editor.text = source.textContent
+  renderer.setup()
+  renderer.init()
+
+  if (!editMode) {
+    btnToggleView.checked = true
+    toggleView()
+  }
+  if (resolution === .5) {
+    btnToggleResolution.checked = true
+    toggleResolution()
+  }
+  canvas.addEventListener('shader-error', e => editor.setError(e.detail))
+  pointers.onchange = renderInteractionFrame
+  resize()
+
+  if (renderer.test(source.textContent) === null) {
+    renderer.updateShader(source.textContent)
+  }
+  elapsedTime = 0
+  startTime = performance.now()
+  renderThis()
+  window.onresize = resize
+  window.addEventListener("keydown", e => {
+    if (e.key === "L" && e.ctrlKey) {
+      e.preventDefault()
+      btnToggleView.checked = !btnToggleView.checked
+      toggleView()
+    } else if (e.key === " " && editor.hidden) {
+      e.preventDefault()
+      btnPlayStop.checked = !btnPlayStop.checked
+      togglePlayStop()
+    }
+  })
+}
+class Renderer {
+  #vertexSrc = "#version 300 es\nprecision highp float;\nin vec4 position;\nvoid main(){gl_Position=position;}"
+  #fragmtSrc = "#version 300 es\nprecision highp float;\nout vec4 O;\nuniform float time;\nuniform vec2 resolution;\nvoid main() {\n\tvec2 uv=gl_FragCoord.xy/resolution;\n\tO=vec4(uv,sin(time)*.5+.5,1);\n}"
+  #vertices = [-1, 1, -1, -1, 1, 1, 1, -1]
+  constructor(canvas, scale) {
+    this.canvas = canvas
+    this.scale = scale
+    this.gl = canvas.getContext("webgl2")
+    this.gl.viewport(0, 0, canvas.width * scale, canvas.height * scale)
+    this.shaderSource = this.#fragmtSrc
+    this.mouseMove = [0, 0]
+    this.mouseCoords = [0, 0]
+    this.pointerCoords = [0, 0]
+    this.nbrOfPointers = 0
+    this.zoom = 0
+    this.wheel = [0, 0]
+    this.startRandom = Math.random()
+  }
+  get defaultSource() { return this.#fragmtSrc }
+  updateShader(source) {
+    this.reset()
+    this.shaderSource = source
+    this.setup()
+    this.init()
+  }
+  updateMove(deltas) {
+    this.mouseMove = deltas
+  }
+  updateZoom(zoom) {
+    this.zoom = zoom
+  }
+  updateWheel(wheel) {
+    this.wheel = wheel
+  }
+  updateMouse(coords) {
+    this.mouseCoords = coords
+  }
+  updatePointerCoords(coords) {
+    this.pointerCoords = coords
+  }
+  updatePointerCount(nbr) {
+    this.nbrOfPointers = nbr
+  }
+  updateScale(scale) {
+    this.scale = scale
+    this.gl.viewport(0, 0, this.canvas.width * scale, this.canvas.height * scale)
+  }
+  compile(shader, source) {
+    const gl = this.gl
+    gl.shaderSource(shader, source)
+    gl.compileShader(shader)
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(shader))
+      this.canvas.dispatchEvent(new CustomEvent('shader-error', { detail: gl.getShaderInfoLog(shader) }))
+    }
+  }
+  test(source) {
+    let result = null
+    const gl = this.gl
+    const shader = gl.createShader(gl.FRAGMENT_SHADER)
+    gl.shaderSource(shader, source)
+    gl.compileShader(shader)
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      result = gl.getShaderInfoLog(shader)
+    }
+    if (!gl.getShaderParameter(shader, gl.DELETE_STATUS)) {
+      gl.deleteShader(shader)
+    }
+    return result
+  }
+  reset() {
+    const { gl, program, vs, fs } = this
+    if (!program || gl.getProgramParameter(program, gl.DELETE_STATUS)) return
+    if (!gl.getShaderParameter(vs, gl.DELETE_STATUS)) {
+      gl.detachShader(program, vs)
+      gl.deleteShader(vs)
+    }
+    if (!gl.getShaderParameter(fs, gl.DELETE_STATUS)) {
+      gl.detachShader(program, fs)
+      gl.deleteShader(fs)
+    }
+    gl.deleteProgram(program)
+  }
+  setup() {
+    const gl = this.gl
+    this.vs = gl.createShader(gl.VERTEX_SHADER)
+    this.fs = gl.createShader(gl.FRAGMENT_SHADER)
+    this.compile(this.vs, this.#vertexSrc)
+    this.compile(this.fs, this.shaderSource)
+    this.program = gl.createProgram()
+    gl.attachShader(this.program, this.vs)
+    gl.attachShader(this.program, this.fs)
+    gl.linkProgram(this.program)
+
+    if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
+      console.error(gl.getProgramInfoLog(this.program))
+    }
+  }
+  init() {
+    const { gl, program } = this
+    this.buffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.#vertices), gl.STATIC_DRAW)
+
+    const position = gl.getAttribLocation(program, "position")
+
+    gl.enableVertexAttribArray(position)
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0)
+
+    program.resolution = gl.getUniformLocation(program, "resolution")
+    program.time = gl.getUniformLocation(program, "time")
+    program.daytime = gl.getUniformLocation(program, "daytime")
+    program.move = gl.getUniformLocation(program, "move")
+    program.touch = gl.getUniformLocation(program, "touch")
+    program.pointerCount = gl.getUniformLocation(program, "pointerCount")
+    program.pointers = gl.getUniformLocation(program, "pointers")
+    program.zoom = gl.getUniformLocation(program, "zoom")
+    program.wheel = gl.getUniformLocation(program, "wheel")
+    program.startRandom = gl.getUniformLocation(program, "startRandom")
+  }
+  render(now = 0) {
+    const { gl, program, buffer, canvas, mouseMove, mouseCoords, pointerCoords, nbrOfPointers, zoom, wheel, startRandom } = this
+    const daytime = new Date()
+    if (!program || gl.getProgramParameter(program, gl.DELETE_STATUS)) return
+
+    gl.clearColor(0, 0, 0, 1)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.useProgram(program)
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+    gl.uniform2f(program.resolution, canvas.width, canvas.height)
+    gl.uniform1f(program.time, now * 1e-3)
+    gl.uniform4f(program.daytime, daytime.getHours(), daytime.getMinutes(), daytime.getSeconds(), daytime.getMilliseconds())
+    gl.uniform2f(program.move, ...mouseMove)
+    gl.uniform2f(program.touch, ...mouseCoords)
+    gl.uniform1i(program.pointerCount, nbrOfPointers)
+    gl.uniform2fv(program.pointers, pointerCoords)
+    gl.uniform1f(program.zoom, zoom)
+    gl.uniform2f(program.wheel, ...wheel)
+    gl.uniform1f(program.startRandom, startRandom)
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+  }
+  clear() {
+    const { gl } = this
+    gl.clear(gl.COLOR_BUFFER_BIT)
+  }
+}
+class PointerHandler {
+  constructor(element, scale) {
+    this.scale = scale
+    this.active = false
+    this.onchange = null
+    this.pointers = new Map()
+    this.lastCoords = [0, 0]
+    this.moves = [0, 0]
+    this.zoom = 0
+    this.wheelDelta = 0
+    this.wheelOffset = 0
+    this.ex = 0
+    this.ey = 0
+    const emit = () => {
+      if (typeof this.onchange === 'function') {
+        this.onchange()
+      }
+    }
+    const map = (element, scale, x, y) => [x * scale, element.height - y * scale]
+    element.addEventListener("pointerdown", (e) => {
+      this.active = true
+      this.pointers.set(e.pointerId, map(element, this.getScale(), e.clientX, e.clientY))
+      this.ex = e.clientX
+      this.ey = e.clientY
+      emit()
+    })
+    element.addEventListener("pointerup", (e) => {
+      if (this.count === 1) {
+        this.lastCoords = this.first
+      }
+      this.pointers.delete(e.pointerId)
+      this.active = this.pointers.size > 0
+      emit()
+    })
+    element.addEventListener("pointerleave", (e) => {
+      if (this.count === 1) {
+        this.lastCoords = this.first
+      }
+      this.pointers.delete(e.pointerId)
+      this.active = this.pointers.size > 0
+      emit()
+    })
+    element.addEventListener("pointermove", (e) => {
+      if (!this.active) return
+      const mapped = map(element, this.getScale(), e.clientX, e.clientY)
+      this.lastCoords = mapped
+      this.pointers.set(e.pointerId, mapped)
+      this.moves = [this.moves[0] + (e.clientX - this.ex), this.moves[1] + (this.ey - e.clientY)]
+      this.ex = e.clientX
+      this.ey = e.clientY
+      emit()
+    })
+    element.addEventListener("wheel", (e) => {
+      this.zoom = lerp(this.zoom, Math.max(-1, Math.min(1, this.zoom + e.deltaY)), .05)
+      // Bei Richtungswechsel sofort anpassen, sonst interpolieren
+      if (this.wheelDelta * e.deltaY < 0) {
+        this.wheelDelta = e.deltaY
+      } else {
+        this.wheelDelta = lerp(this.wheelDelta, e.deltaY, .05)
+      }
+      this.wheelOffset += this.wheelDelta
+      emit()
+    }, { passive: true })
+  }
+  getScale() {
+    return this.scale
+  }
+  updateScale(scale) { this.scale = scale }
+  reset() {
+    this.pointers.clear()
+    this.active = false
+    this.lastCoords = [0, 0]
+    this.moves = [0, 0]
+    this.zoom = 0
+    this.wheelDelta = 0
+    this.wheelOffset = 0
+  }
+  get count() {
+    return this.pointers.size
+  }
+  get move() {
+    return this.moves
+  }
+  get zoomed() {
+    return this.zoom
+  }
+  get wheel() {
+    return [this.wheelDelta, this.wheelOffset] || [0, 0]
+  }
+  get coords() {
+    return this.pointers.size > 0 ? Array.from(this.pointers.values()).map((p) => [...p]).flat() : [0, 0]
+  }
+  get first() {
+    return this.pointers.values().next().value || this.lastCoords
+  }
+}
+function lerp(a, b, t) {
+  return a + (b - a) * t
+}
+class Editor {
+  constructor(textarea, errorfield, errorindicator) {
+    this.textarea = textarea
+    this.errorfield = errorfield
+    this.errorindicator = errorindicator
+    textarea.addEventListener('keydown', this.handleKeydown.bind(this))
+    textarea.addEventListener('scroll', this.handleScroll.bind(this))
+  }
+  get hidden() { return this.textarea.classList.contains('hidden') }
+  set hidden(value) { value ? this.#hide() : this.#show() }
+  get text() { return this.textarea.value }
+  set text(value) { this.textarea.value = value }
+  get scrollTop() { return this.textarea.scrollTop }
+  set scrollTop(value) { this.textarea.scrollTop = value }
+  setError(message) {
+    this.errorfield.innerHTML = message
+    this.errorfield.classList.add('opaque')
+    const match = message.match(/ERROR: \d+:(\d+):/)
+    const lineNumber = match ? parseInt(match[1]) : 0
+    const overlay = document.createElement('pre')
+
+    overlay.classList.add('overlay')
+    overlay.textContent = '\n'.repeat(lineNumber)
+
+    document.body.appendChild(overlay)
+
+    const offsetTop = parseInt(getComputedStyle(overlay).height)
+
+    this.errorindicator.style.setProperty('--top', offsetTop + 'px')
+    this.errorindicator.style.visibility = 'visible'
+
+    document.body.removeChild(overlay)
+  }
+  clearError() {
+    this.errorfield.textContent = ''
+    this.errorfield.classList.remove('opaque')
+    this.errorfield.blur()
+    this.errorindicator.style.visibility = 'hidden'
+  }
+  focus() {
+    this.textarea.focus()
+  }
+  #hide() {
+    for (const el of [this.errorindicator, this.errorfield, this.textarea]) {
+      el.classList.add('hidden')
+    }
+  }
+  #show() {
+    for (const el of [this.errorindicator, this.errorfield, this.textarea]) {
+      el.classList.remove('hidden')
+    }
+    this.focus()
+  }
+  handleScroll() {
+    this.errorindicator.style.setProperty('--scroll-top', `${this.textarea.scrollTop}px`)
+  }
+  handleKeydown(event) {
+    if (event.key === "Tab") {
+      event.preventDefault()
+      this.handleTabKey(event.shiftKey)
+    } else if (event.key === "Enter") {
+      event.preventDefault()
+      this.handleEnterKey()
+    }
+  }
+  handleTabKey(shiftPressed) {
+    if (this.#getSelectedText() !== "") {
+      if (shiftPressed) {
+        this.#unindentSelectedText()
+        return
+      }
+      this.#indentSelectedText()
+    } else {
+      this.#indentAtCursor()
+    }
+  }
+  #getSelectedText() {
+    const editor = this.textarea
+    const start = editor.selectionStart
+    const end = editor.selectionEnd
+    return editor.value.substring(start, end)
+  }
+  #indentAtCursor() {
+    const editor = this.textarea
+    const cursorPos = editor.selectionStart
+
+    document.execCommand('insertText', false, '\t')
+    editor.selectionStart = editor.selectionEnd = cursorPos + 1
+  }
+  #indentSelectedText() {
+    const editor = this.textarea
+    const cursorPos = editor.selectionStart
+    const selectedText = this.#getSelectedText()
+    const lines = selectedText.split('\n')
+    const indentedText = lines.map(line => '\t' + line).join('\n')
+
+    document.execCommand('insertText', false, indentedText)
+    editor.selectionStart = cursorPos
+  }
+  #unindentSelectedText() {
+    const editor = this.textarea
+    const cursorPos = editor.selectionStart
+    const selectedText = this.#getSelectedText()
+    const lines = selectedText.split('\n')
+    const indentedText = lines.map(line => line.replace(/^\t/, '').replace(/^ /, '')).join('\n')
+
+    document.execCommand('insertText', false, indentedText)
+    editor.selectionStart = cursorPos
+  }
+  handleEnterKey() {
+    const editor = this.textarea
+    const visibleTop = editor.scrollTop
+    const cursorPosition = editor.selectionStart
+
+    let start = cursorPosition - 1
+    while (start >= 0 && editor.value[start] !== '\n') {
+      start--
+    }
+
+    let newLine = ''
+    while (start < cursorPosition - 1 && (editor.value[start + 1] === ' ' || editor.value[start + 1] === '\t')) {
+      newLine += editor.value[start + 1]
+      start++
+    }
+
+    document.execCommand('insertText', false, '\n' + newLine)
+    editor.selectionStart = editor.selectionEnd = cursorPosition + 1 + newLine.length
+    editor.scrollTop = visibleTop // Prevent the editor from scrolling
+    const lineHeight = editor.scrollHeight / editor.value.split('\n').length
+    const line = editor.value.substring(0, cursorPosition).split('\n').length
+
+    // Do the actual layout calculation in order to get the correct scroll position
+    const visibleBottom = editor.scrollTop + editor.clientHeight
+    const lineTop = lineHeight * (line - 1)
+    const lineBottom = lineHeight * (line + 2)
+
+    // If the cursor is outside the visible range, scroll the editor
+    if (lineTop < visibleTop) editor.scrollTop = lineTop
+    if (lineBottom > visibleBottom) editor.scrollTop = lineBottom - editor.clientHeight
+  }
+}
+</script>
+
+  </body>
+
+</html>

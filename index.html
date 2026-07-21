@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#010402">
+<title>OSIRIS.EXE // Archive Hub</title>
+<meta name="description" content="OSIRIS.EXE recovered archive — index of all recovered transmissions">
+<style>
+:root{--g:#00ff46;--dark:#010402;--line:rgba(0,255,70,.25);--txt:#dfffe7;--dim:rgba(210,255,221,.48)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--dark);color:var(--txt);font:12px/1.5 "Courier New",monospace;text-transform:uppercase}
+body{display:flex;flex-direction:column;min-height:100vh;padding:clamp(16px,4vw,48px);cursor:crosshair}
+.scan,.grain,.vignette{position:fixed;inset:0;pointer-events:none;z-index:3}
+.scan{background:repeating-linear-gradient(0deg,rgba(0,0,0,.17) 0 1px,rgba(0,255,70,.025) 1px 2px);mix-blend-mode:screen}
+.grain{opacity:.11;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");animation:grain .16s steps(2) infinite}
+.vignette{background:radial-gradient(circle,transparent 25%,rgba(0,5,2,.35) 58%,#000 112%)}
+@keyframes grain{0%{transform:translate(0)}25%{transform:translate(-2%,1%)}50%{transform:translate(1%,-2%)}75%{transform:translate(2%,2%)}}
+.led{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:8px;background:var(--g);box-shadow:0 0 10px var(--g);animation:blink 1.5s steps(1) infinite}
+@keyframes blink{0%,70%{opacity:1}71%,78%{opacity:.15}79%{opacity:1}}
+.eyebrow{color:var(--g);font-size:9px;letter-spacing:.2em}
+h1{margin:10px 0 0;font:900 clamp(40px,8vw,96px)/.85 "Arial Black",Impact,sans-serif;letter-spacing:-.075em}
+h1 span{color:var(--g)}
+.meta{margin-top:14px;color:var(--dim);font-size:9px;line-height:1.7}
+main{flex:1;margin-top:clamp(24px,5vh,56px)}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));max-width:1200px}
+a.card{display:block;position:relative;text-decoration:none;color:var(--txt);border:1px solid var(--line);background:rgba(0,10,4,.55);padding:20px 22px 18px;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);transition:background .15s,box-shadow .15s}
+a.card:hover,a.card:focus-visible{background:rgba(0,30,10,.85);box-shadow:0 0 28px rgba(0,255,70,.25);outline:none}
+a.card:hover .go{color:var(--g)}
+.tag{color:var(--g);font-size:8px;letter-spacing:.18em}
+.card h2{margin:8px 0 6px;font:900 clamp(18px,2.2vw,24px)/1 "Arial Black",Impact,sans-serif;letter-spacing:-.04em}
+.card p{margin:0 0 14px;color:var(--dim);font-size:10px;line-height:1.6;text-transform:none}
+.go{font-size:9px;letter-spacing:.15em;color:var(--dim)}
+.rows{margin-top:6px;border-top:1px dotted rgba(0,255,70,.13)}
+.row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted rgba(0,255,70,.13);color:var(--dim);font-size:8px}
+.row b{color:var(--txt);font-weight:400}
+footer{margin-top:clamp(24px,5vh,56px);display:flex;justify-content:space-between;gap:20px;color:var(--dim);font-size:9px;flex-wrap:wrap}
+.corner{position:fixed;width:20px;height:20px;z-index:4;border-color:var(--g);opacity:.6}
+.tl{left:10px;top:10px;border-left:1px solid;border-top:1px solid}
+.tr{right:10px;top:10px;border-right:1px solid;border-top:1px solid}
+.bl{left:10px;bottom:10px;border-left:1px solid;border-bottom:1px solid}
+.br{right:10px;bottom:10px;border-right:1px solid;border-bottom:1px solid}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="scan"></div><div class="grain"></div><div class="vignette"></div>
+<i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+<header>
+  <div class="eyebrow"><i class="led"></i>archive hub // all recovered transmissions</div>
+  <h1>OSIRIS<span>.EXE</span></h1>
+  <div class="meta">ARCHIVE: CHI/HMB/047<br>TIME INDEX: 02:47 AM CST<br>CLEARANCE: DISK // LEVEL 04</div>
+</header>
+<main>
+  <div class="grid">
+    <a class="card" href="osiris-exe-archive.html">
+      <div class="tag">entry 01 // static record</div>
+      <h2>Recovered Archive</h2>
+      <p>Full-screen recovered archive with embedded sentinel artwork, telemetry readout, CRT treatment, parallax, and manual signal pulse.</p>
+      <div class="rows">
+        <div class="row"><span>format</span><b>archive page</b></div>
+        <div class="row"><span>status</span><b>recovered</b></div>
+      </div>
+      <div class="go">[ open transmission &gt; ]</div>
+    </a>
+    <a class="card" href="osiris-exe-signal-space.html">
+      <div class="tag">entry 02 // live topology</div>
+      <h2>Signal Space</h2>
+      <p>Interactive carrier-space visualization. 180 orbiting archive fragments. Drag to rotate, wheel to change depth, double-click to inject corruption.</p>
+      <div class="rows">
+        <div class="row"><span>format</span><b>interactive 3d</b></div>
+        <div class="row"><span>carrier</span><b>73.442 MHz</b></div>
+      </div>
+      <div class="go">[ open transmission &gt; ]</div>
+    </a>
+    <a class="card" href="osiris-motion-comic.html">
+      <div class="tag">entry 03 // sequence playback</div>
+      <h2>Motion Comic</h2>
+      <p>Four-scene sequence: The Grid, The Disruptor, Pale Horse Protocol, OSIRIS Awake. Playback, navigation, swipe controls, and captions.</p>
+      <div class="rows">
+        <div class="row"><span>format</span><b>motion comic</b></div>
+        <div class="row"><span>scenes</span><b>4</b></div>
+      </div>
+      <div class="go">[ open transmission &gt; ]</div>
+    </a>
+    <a class="card" href="yotta.html">
+      <div class="tag">entry 04 // foreign signal</div>
+      <h2>Elevator Visual</h2>
+      <p>Intercepted WebGL fractal shader — "Yotta" by Matthias Hurrle (@atzedent). Live GLSL editor on board: Ctrl+L toggles code view, Space toggles playback.</p>
+      <div class="rows">
+        <div class="row"><span>format</span><b>webgl shader</b></div>
+        <div class="row"><span>origin</span><b>@atzedent</b></div>
+      </div>
+      <div class="go">[ open transmission &gt; ]</div>
+    </a>
+  </div>
+</main>
+<footer>
+  <span>OSIRIS.EXE ARCHIVE HUB // HUMBOLDT PARK</span>
+  <span>DO NOT ANSWER</span>
+</footer>
+</body>
+</html>
