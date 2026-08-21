@@ -5,7 +5,7 @@ Saved July 20, 2026.
 ## Finished interactive pages
 
 - `osiris-exe-archive.html` — full-screen recovered archive with embedded sentinel artwork, telemetry, CRT treatment, parallax, and manual signal pulse.
-- `osiris-exe-signal-space.html` — interactive OSIRIS carrier-space visualization with orbiting archive fragments.
+- `osiris-exe-signal-space.html` — interactive OSIRIS carrier-space visualization with orbiting archive fragments. Dust field renders through a soft radial glow sprite with additive blending.
 - `osiris-motion-comic.html` — four-scene motion comic using the Chicago grid, signal disruptor, Pale Horse page, and OSIRIS sentinel artwork. Includes playback, navigation, swipe controls, captions, mobile layout, and local image loading.
 
 All three HTML files are self-contained and can be opened directly in a browser.
