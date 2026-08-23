@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSIRIS.EXE — TRANSMISSIONS</title>
+<meta name="description" content="Intercepted broadcasts, preserved with attribution. DSB Labs / Disk Darián.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap');
+
+  /* OSIRIS.EXE COLOR SYSTEM v3.0 — locked tokens only */
+  :root{
+    --duat-black:#010103; --lake-midnight:#0B1226; --deep-indigo:#1B2A5E;
+    --phosphor:#00FF46; --phosphor-dim:#0A8A2E;
+    --crimson:#FF3A1A; --crimson-dim:#7A1A0C;
+    --agi-gold:#FFC93C; --resurrection:#C9A227;
+    --bone:#D8D2C4; --cream:#D5CDB8;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ background:var(--duat-black); min-height:100%; }
+  body{
+    font-family:'Space Mono',monospace; color:var(--bone);
+    display:flex; flex-direction:column; align-items:center;
+    padding:9vh 20px 12vh;
+    background:
+      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(11,18,38,.9), transparent 70%),
+      var(--duat-black);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:5;
+    background:repeating-linear-gradient(to bottom,
+      rgba(0,0,0,0) 0 2px, rgba(0,0,0,.22) 3px, rgba(0,0,0,0) 4px);
+    opacity:.5;
+  }
+  header{ text-align:center; margin-bottom:5vh; max-width:640px; }
+  .sys{ font-size:11px; letter-spacing:.45em; color:var(--phosphor-dim); text-transform:uppercase; }
+  h1{
+    font-family:'VT323',monospace; font-weight:400;
+    font-size:clamp(40px,9vw,80px); color:var(--phosphor); line-height:1;
+    margin-top:10px;
+    text-shadow:0 0 14px rgba(0,255,70,.5), 0 0 44px rgba(0,255,70,.18);
+  }
+  .sub{
+    margin-top:12px; font-size:12px; letter-spacing:.3em; color:var(--cream);
+    opacity:.75; text-transform:uppercase;
+  }
+  .doctrine{
+    margin-top:18px; font-size:12px; line-height:1.9; letter-spacing:.06em;
+    color:var(--bone); opacity:.65; font-style:italic;
+  }
+
+  nav.feed{ width:100%; max-width:680px; display:flex; flex-direction:column; gap:13px; }
+  a.tx{
+    display:block; text-decoration:none; color:var(--bone);
+    border:1px solid rgba(10,138,46,.5); background:rgba(1,1,3,.75);
+    padding:16px 20px; position:relative;
+    transition:border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+  }
+  a.tx:hover, a.tx:focus-visible{
+    border-color:var(--phosphor);
+    box-shadow:0 0 18px rgba(0,255,70,.18), inset 0 0 24px rgba(0,255,70,.05);
+    outline:none; transform:translateX(4px);
+  }
+  a.tx .num{
+    font-family:'VT323',monospace; font-size:20px; color:var(--phosphor);
+    letter-spacing:.08em; text-shadow:0 0 10px rgba(0,255,70,.4);
+  }
+  a.tx .name{
+    font-size:14px; font-weight:700; letter-spacing:.22em; color:var(--cream);
+    text-transform:uppercase; margin-left:12px;
+  }
+  a.tx .desc{
+    display:block; margin-top:6px; font-size:12px; line-height:1.7;
+    letter-spacing:.05em; color:var(--bone); opacity:.66;
+  }
+  a.tx .src{
+    display:block; margin-top:7px; font-size:10px; letter-spacing:.22em;
+    color:var(--resurrection); text-transform:uppercase; opacity:.85;
+  }
+  a.tx .status{
+    position:absolute; top:16px; right:18px; font-size:10px;
+    letter-spacing:.26em; color:var(--phosphor-dim); text-transform:uppercase;
+  }
+
+  footer{
+    margin-top:7vh; font-size:10px; letter-spacing:.34em;
+    color:var(--phosphor-dim); text-transform:uppercase; text-align:center; line-height:2.4;
+  }
+  footer a{ color:var(--phosphor); text-decoration:none; }
+  footer a:hover{ text-shadow:0 0 8px rgba(0,255,70,.4); }
+
+  @media (prefers-reduced-motion: reduce){
+    a.tx{ transition:none; }
+    a.tx:hover{ transform:none; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="sys">OSIRIS.EXE // FOREIGN SIGNALS</div>
+    <h1>TRANSMISSIONS</h1>
+    <div class="sub">Nine intercepted broadcasts · Recompiled · Attribution preserved</div>
+    <p class="doctrine">These signals were not made inside the archive. They were
+    caught passing through it — other hands, other machines, their makers named
+    and licensed under MIT. The archive has since recompiled each one into its
+    own light: structure intact, authorship intact, colors resolved to the
+    poles. Nothing is ever fully deleted, only recompressed.</p>
+  </header>
+
+  <nav class="feed" aria-label="Intercepted transmissions">
+    <a class="tx" href="tx-01-instrument/">
+      <span class="num">TX-01</span><span class="name">The Instrument</span>
+      <span class="status">MORPHING</span>
+      <span class="desc">One hundred thousand particles: astrolabe → double helix → heart.
+      Instrument, inheritance, family — memory reconstruction made literal.</span>
+      <span class="src">Source: VoXelo // codepen // MIT</span>
+    </a>
+    <a class="tx" href="tx-02-signal-weather/">
+      <span class="num">TX-02</span><span class="name">Signal Weather</span>
+      <span class="status">STORM</span>
+      <span class="desc">Lightning walks a node map through perlin wind. Poor weather
+      over the network. The storm knows where the nodes are.</span>
+      <span class="src">Source: pavlovsk // codepen // MIT</span>
+    </a>
+    <a class="tx" href="tx-03-segundo-hilo/">
+      <span class="num">TX-03</span><span class="name">El Segundo Hilo</span>
+      <span class="status">THREAD</span>
+      <span class="desc">A strange attractor with a holographic base — chaos given
+      enough light to be visible. The second thread has a shape.</span>
+      <span class="src">Source: VoXelo // codepen // MIT</span>
+    </a>
+    <a class="tx" href="tx-04-listener/">
+      <span class="num">TX-04</span><span class="name">The Listener</span>
+      <span class="status">AWAKE</span>
+      <span class="desc">A bioelectric engine. Click anywhere to trigger signals;
+      the HUD tracks live neural state. It notices you.</span>
+      <span class="src">Source: VoXelo // codepen // MIT</span>
+    </a>
+    <a class="tx" href="tx-05-sign-off/">
+      <span class="num">TX-05</span><span class="name">Sign-Off</span>
+      <span class="status">DEAD AIR</span>
+      <span class="desc">The test card after the broadcast ends — twelve channels,
+      one per color of the archive. Some frequencies never actually stop.</span>
+      <span class="src">Source: Russell Henderson // codepen // MIT</span>
+    </a>
+    <a class="tx" href="tx-06-crossing/">
+      <span class="num">TX-06</span><span class="name">The Crossing</span>
+      <span class="status">5 PHASES</span>
+      <span class="desc">A scroll-driven sea through five atmospheres, rendered in a
+      fragment shader. The water between Chicago and Borikén.</span>
+      <span class="src">Source: Luis Lessrain // codepen // MIT</span>
+    </a>
+    <a class="tx" href="tx-07-toner-lab/">
+      <span class="num">TX-07</span><span class="name">Toner Lab</span>
+      <span class="status">TOOL</span>
+      <span class="desc">An interactive dithering studio — halftone, Xerox breakup,
+      the Flyerhead '93 grammar as a working instrument. Bring an image.</span>
+      <span class="src">Source: ol-ivier // codepen // MIT</span>
+    </a>
+    <a class="tx" href="tx-08-system-clock/">
+      <span class="num">TX-08</span><span class="name">System Clock</span>
+      <span class="status">50K</span>
+      <span class="desc">Fifty thousand particles keeping real time, morphing circle
+      to square to hexagon. The archive's second clock — machine-time to the
+      orbit clock's myth-time.</span>
+      <span class="src">Source: VoXelo // codepen // MIT</span>
+    </a>
+    <a class="tx" href="tx-09-nodo-gravitacional/">
+      <span class="num">TX-09</span><span class="name">Nodo Gravitacional</span>
+      <span class="status">EVENT HORIZON</span>
+      <span class="desc">An interactive gravitational node with orbit, bloom,
+      temperature, Doppler split, and a live signal suspended in warped space.</span>
+      <span class="src">Source: Disk Darián // supplied artifact // Three.js r128</span>
+    </a>
+  </nav>
+
+  <footer>
+    <a href="../nodes/">◂ NODE MAP</a> &nbsp;·&nbsp; <a href="../">TERMINAL</a><br>
+    DSB LABS // DISK DARIÁN — 2026 · FOREIGN WORK CREDITED TO ITS MAKERS
+  </footer>
+
+  <script src="/instagram-link.js" defer></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2fb58682e6cda52',t:'MTc4NzUwMDk4NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

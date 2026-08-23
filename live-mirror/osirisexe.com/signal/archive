@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>osiris.exe // archive</title>
+<!--
+  Background shader based on "Yotta" by Matthias Hurrle (@atzedent)
+  https://codepen.io/atzedent/pen/bNBRGbR
+  MIT License — see LICENSE-shader.txt
+-->
+<style>
+:root {
+  --green: #33ff66;
+  --green-dim: #1d8f3f;
+  --bg: #000;
+  --card-w: min(58vw, 22rem);
+  --ring-r: 48rem;
+}
+* { box-sizing: border-box; }
+html {
+  background: var(--bg);
+}
+html, body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--green);
+  font-family: "Courier New", Courier, monospace;
+}
+body {
+  background: transparent;
+  overflow: hidden;
+  touch-action: none;
+}
+/* live shader background */
+#bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -2;
+  pointer-events: none;
+  background: #000;
+}
+/* dim overlay so HUD/cards stay readable */
+#dim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.55);
+}
+/* CRT scanlines + vignette */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.18) 3px
+  );
+  mix-blend-mode: multiply;
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 51;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+a { color: var(--green); text-decoration: none; }
+a:hover { text-shadow: 0 0 8px var(--green); }
+
+.hud {
+  position: fixed;
+  z-index: 60;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 6px rgba(51, 255, 102, 0.5);
+}
+#hud-tl { top: 1rem; left: 1.25rem; }
+#hud-tr { top: 1rem; right: 1.25rem; text-align: right; }
+#hud-bl { bottom: 1rem; left: 1.25rem; }
+#hud-br { bottom: 1rem; right: 1.25rem; text-align: right; }
+.hud .dim { color: var(--green-dim); }
+.blink { animation: blink 1.4s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: #000;
+  animation: boot-away 0.8s 1.1s forwards;
+}
+.boot div {
+  font-size: clamp(0.72rem, 3vw, 1rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  animation: boot-glitch 0.18s steps(2, end) infinite;
+}
+@keyframes boot-away { to { opacity: 0; visibility: hidden; } }
+@keyframes boot-glitch { 50% { transform: translateX(2px); text-shadow: -2px 0 #fff; } }
+
+.archive-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+.topbar,
+.bottombar {
+  z-index: 61;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid rgba(51, 255, 102, 0.28);
+  background: rgba(0, 0, 0, 0.64);
+  padding: 0.65rem 0.8rem;
+  font-size: clamp(0.58rem, 1.6vw, 0.76rem);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.topbar strong { color: #d7ffe4; }
+.rec-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin: 0 0.45rem;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 12px var(--green);
+  animation: blink 1.2s steps(2, end) infinite;
+}
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  perspective: 42em;
+  cursor: grab;
+  mask: linear-gradient(90deg, transparent, #000 12% 88%, transparent);
+}
+.stage.dragging { cursor: grabbing; }
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border: 1px solid rgba(51, 255, 102, 0.12);
+  box-shadow: inset 0 0 80px rgba(51, 255, 102, 0.03);
+  pointer-events: none;
+}
+.ring {
+  display: grid;
+  place-self: center;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transform: translateZ(calc(-1 * var(--ring-r))) rotateX(-4deg) rotateY(var(--rotation, 0deg));
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card {
+  --angle: calc(360deg / var(--count));
+  grid-area: 1 / 1;
+  display: block;
+  width: var(--card-w);
+  height: min(56vh, 30rem);
+  margin: 0;
+  border: 1px solid rgba(51, 255, 102, 0.42);
+  border-radius: 0.28rem;
+  background: #000;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  backface-visibility: hidden;
+  filter: sepia(0.28) saturate(0.78) contrast(1.08) brightness(0.65);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9), 0 1.5rem 4rem rgba(0, 0, 0, 0.7), 0 0 1.5rem rgba(51, 255, 102, 0.08);
+  transform: rotateY(calc(var(--index) * var(--angle))) translateZ(var(--ring-r));
+  transition: filter 0.35s, border-color 0.35s;
+}
+.card.active {
+  border-color: var(--green);
+  filter: sepia(0.08) saturate(0.95) contrast(1.12) brightness(0.96);
+}
+.reticle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(72vw, 27rem);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border: 1px solid rgba(51, 255, 102, 0.18);
+  pointer-events: none;
+}
+.status {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  max-width: min(42ch, 78vw);
+  border-left: 2px solid var(--green);
+  background: rgba(0, 0, 0, 0.72);
+  padding: 0.6rem 0.75rem;
+  font-size: clamp(0.6rem, 1.7vw, 0.78rem);
+  line-height: 1.45;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.status b { color: #d7ffe4; }
+.controls { display: flex; gap: 0.5rem; }
+.control {
+  appearance: none;
+  border: 1px solid rgba(51, 255, 102, 0.28);
+  background: #020503;
+  color: var(--green);
+  padding: 0.38rem 0.65rem;
+  font: inherit;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.control:hover,
+.control:focus-visible,
+.control:active { background: var(--green); color: #000; outline: none; }
+.progress {
+  min-width: 90px;
+  height: 2px;
+  flex: 1;
+  overflow: hidden;
+  background: rgba(51, 255, 102, 0.12);
+}
+.progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+  transform: scaleX(0.05);
+  transform-origin: left;
+  transition: transform 0.35s;
+}
+body > button[aria-pressed] {
+  top: 50% !important;
+  right: 0 !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+  writing-mode: vertical-rl !important;
+}
+
+@media (max-width: 700px) {
+  :root { --card-w: min(69vw, 19rem); }
+  .topbar span:nth-child(3),
+  .bottombar > span:first-child { display: none; }
+  .status { left: 0.5rem; bottom: 0.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boot { display: none; }
+  .rec-dot { animation: none; }
+  .ring, .card, .progress span { transition: none; }
+}
+
+/* lightbox */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.18) 3px
+    ),
+    rgba(0, 0, 0, 0.55);
+  cursor: zoom-out;
+  padding: 2rem;
+}
+#lightbox.open { display: flex; }
+#lightbox img {
+  max-width: 100%;
+  max-height: 88vh;
+  border: 1px solid var(--green-dim);
+}
+#lightbox .caption {
+  position: absolute;
+  bottom: 1rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+}
+#lightbox .lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="dim"></div>
+
+<div class="boot" aria-hidden="true"><div>OSIRIS.EXE // MOUNTING COMBINED ARCHIVE...</div></div>
+
+<main class="archive-shell">
+  <header class="topbar">
+    <span>REC<span class="rec-dot"></span><strong id="clock">--:--:--</strong></span>
+    <span><a href="index.html">&#9666; OSIRIS.EXE</a> // RECOVERED ARCHIVE</span>
+    <span>CLEARANCE: DISK // 20 FILES</span>
+  </header>
+
+  <section class="stage" id="stage" aria-label="Rotating archive carousel">
+    <div class="ring" id="ring" style="--count: 20; --rotation: 0deg;">
+      <img class="card active" src="assets/file_001.webp" alt="Recovered archive file 001" data-label="FILE_001" style="--index: 0;">
+      <img class="card" src="assets/file_002.webp" alt="Recovered archive file 002" data-label="FILE_002" style="--index: 1;">
+      <img class="card" src="assets/file_003.webp" alt="Recovered archive file 003" data-label="FILE_003" style="--index: 2;">
+      <img class="card" src="assets/file_004.webp" alt="Recovered archive file 004" data-label="FILE_004" style="--index: 3;">
+      <img class="card" src="assets/file_005.webp" alt="Recovered archive file 005" data-label="FILE_005" style="--index: 4;">
+      <img class="card" src="assets/file_006.webp" alt="Recovered archive file 006" data-label="FILE_006" style="--index: 5;">
+      <img class="card" src="assets/file_007.webp" alt="Recovered archive file 007" data-label="FILE_007" style="--index: 6;">
+      <img class="card" src="assets/file_008.webp" alt="Recovered archive file 008: child beside the Borikén jeep" data-label="FILE_008" style="--index: 7;">
+      <img class="card" src="assets/file_009.webp" alt="Recovered archive file 009: archive vision over a Humboldt Park classroom" data-label="FILE_009" style="--index: 8;">
+      <img class="card" src="assets/file_010.webp" alt="Recovered archive file 010: Barrio Borikén mural" data-label="FILE_010" style="--index: 9;">
+      <img class="card" src="assets/file_011.webp" alt="Recovered archive file 011: mother and child" data-label="FILE_011" style="--index: 10;">
+      <img class="card" src="assets/file_014.webp" alt="Recovered archive file 014: the great timeline" data-label="FILE_014" style="--index: 11;">
+      <img class="card" src="assets/file_015.webp" alt="Recovered archive file 015: all possibilities, one disk" data-label="FILE_015" style="--index: 12;">
+      <img class="card" src="assets/file_016.webp" alt="Recovered archive file 016: Education memory factory node" data-label="FILE_016" style="--index: 13;">
+      <img class="card" src="assets/file_017.webp" alt="Recovered archive file 017: AI prediction god node" data-label="FILE_017" style="--index: 14;">
+      <img class="card" src="assets/file_018.webp" alt="Recovered archive file 018: The Religion belief engine node" data-label="FILE_018" style="--index: 15;">
+      <img class="card" src="assets/file_019.webp" alt="Recovered archive file 019: The Corporations extraction engine node" data-label="FILE_019" style="--index: 16;">
+      <img class="card" src="assets/file_020.webp" alt="Recovered archive file 020: The Military force engine node" data-label="FILE_020" style="--index: 17;">
+      <img class="card" src="assets/file_021.webp" alt="Recovered archive file 021: archive cycle from birth to memory" data-label="FILE_021" style="--index: 18;">
+      <img class="card" src="assets/file_022.webp" alt="Recovered archive file 022: Guatibirí comic transmission" data-label="FILE_022" style="--index: 19;">
+    </div>
+    <div class="reticle" aria-hidden="true"></div>
+    <div class="status">
+      <b id="fileLabel">RECOVERED ARCHIVE // FILE_001</b><br>
+      DRAG TO ROTATE // TAP ACTIVE FILE TO INSPECT<br>
+      SIGNAL STATUS: <span id="signal">CONTAINED</span>
+    </div>
+  </section>
+
+  <footer class="bottombar">
+    <span>THE MEMORY IS NOT DEAD. IT WAS ARCHIVED.</span>
+    <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+    <div class="controls">
+      <button class="control" id="prev" type="button" aria-label="Previous archive file">&#9664;</button>
+      <button class="control" id="toggle" type="button" aria-pressed="true">PAUSE</button>
+      <button class="control" id="next" type="button" aria-label="Next archive file">&#9654;</button>
+    </div>
+  </footer>
+</main>
+
+<div id="lightbox">
+  <img alt="">
+  <div class="caption"></div>
+  <button class="control lightbox-close" type="button" aria-label="Close image">CLOSE [ESC]</button>
+</div>
+
+<script type="x-shader/x-fragment" id="bgShader">#version 300 es
+/*********
+* made by Matthias Hurrle (@atzedent)
+*/
+precision highp float;
+out vec4 O;
+uniform float time;
+uniform vec2 resolution;
+uniform vec2 wheel;
+#define FC gl_FragCoord.xy
+#define R resolution
+#define T (time+wheel.y/1e3)
+#define N normalize
+#define S smoothstep
+#define MN min(R.x,R.y)
+#define LP vec3(-2,8,-2)
+#define EDGESIZE 42e-4
+#define hue(a) (.5+.5*sin(3.14*(a)+vec3(1,2,3)))
+// Spline setup for camera path.
+// Reference: https://www.shadertoy.com/view/4s3SRN
+vec3 cp[14];
+void initCam() {
+	const float a=2.*.96, b=2.*a;
+	cp[0] =vec3(0);
+	cp[1] =vec3(0,0,b);
+	cp[2] =vec3(a,0,b);
+	cp[3] =vec3(a,0,a);
+	cp[4] =vec3(a,-a*1.2,a);
+	cp[5] =vec3(-a,-a,a);
+	cp[6] =vec3(-a,0,a);
+	cp[7] =vec3(-a,0,0);
+	cp[8] =vec3(0);
+	cp[9] =vec3(0,0,-b);
+	cp[10]=vec3(0,a,-b);
+	cp[11]=vec3(-a,a,-b);
+	cp[12]=vec3(-a,0,-b);
+	cp[13]=vec3(-a,0,0);
+}
+vec3 catmull(vec3 a, vec3 b, vec3 c, vec3 d, float t){
+	return (((-a+b*3.-c*3.+d)*t*t*t + (a*2.- b*5.+c*4.-d)*t*t + (-a+c)*t + b*2.)*.5);
+}
+vec3 camPath(float t){
+	const int n=14;
+	const float k=float(n);
+	t=fract(t/k)*k;
+	float sn=floor(t), st=t-sn;
+	if (sn==.0) return catmull(cp[n-1], cp[0], cp[1], cp[2], st);
+	for (int i=1; i<n-2; i++) {
+		if (sn==float(i)) return catmull(cp[i-1], cp[i], cp[i+1], cp[i+2], st);
+	}
+	if (sn==k-2.) return catmull(cp[n-3], cp[n-2], cp[n-1], cp[0], st);
+	if (sn==k-1.) return catmull(cp[n-2], cp[n-1], cp[0], cp[1], st);
+	return vec3(0);
+}
+float rnd(vec3 p) {
+	p=fract(p*vec3(12.9898,78.233,156.345));
+	p+=dot(p,p+34.56);
+	return fract(p.x*p.y*p.z);
+}
+float smin(float a, float b, float k) {
+	k*=log(2.);
+	float x=b-a;
+	return a+x/(1.-exp2(x/k));
+}
+float box(vec3 p, float s) {
+	p=abs(p)-s;
+	return length(max(p,.0))+min(.0,max(max(p.x,p.y),p.z));
+}
+#define ZERO (time*.0)
+float map(vec3 p) {
+	float e=length(vec2(fract(p.z)-.5,p.y-1.))-.1;
+	p.xz=mod(p.xz+1.,2.)-1.;
+	float d=box(p,1.), f=1.;
+	for(float i=ZERO; i<5.; i++) {
+		vec3 a=mod(p*f,2.)-1., r=abs(1.-3.*abs(a));
+		f*=2.25;
+		float
+		da=max(r.x,r.y),
+		db=max(r.y,r.z),
+		dc=max(r.z,r.x);
+		d=max(d,(min(da,min(db,dc))-1.)/f);
+	}
+	return smin(d,e,1e-2)+2e-3;
+}
+vec3 norm(vec3 p) {
+	float h=1e-3; vec2 k=vec2(-1,1);
+	return N(
+		k.xyy*map(p+k.xyy*h)+
+		k.yxy*map(p+k.yxy*h)+
+		k.yyx*map(p+k.yyx*h)+
+		k.xxx*map(p+k.xxx*h)
+	);
+}
+bool march(inout vec3 p, vec3 rd, out float dd, out float edge, out float i) {
+	bool near;
+	// low quality on the outside
+	float maxd=abs(p.y)>1.?130.:800.;
+	for (; i++<maxd;) {
+		float d=map(p);
+		if (abs(d)<1e-3) return true;
+		if (d>100.) return false;
+		if (near && d>EDGESIZE) edge=1.;
+		if (d<EDGESIZE) near=true;
+		p+=rd*d*.5;
+		dd*=d*.5;
+	}
+}
+float calcAO(vec3 p, vec3 n) {
+	float occ=.0, sca=1.;
+	for (float i=.0; i<5.; i++) {
+		float
+		h=.01+i*.05,
+		d=map(p+h*n);
+		occ+=(h-d)*sca;
+		sca*=.95;
+		if (occ>.35) break;
+	}
+	return clamp(1.-3.*occ,.0,1.);
+}
+float getao(vec3 p, vec3 n, float dist) {
+	return clamp(map(p+n*dist)/dist,.0,1.);
+}
+vec3 dir(vec2 uv, vec3 ro, vec3 t, float z) {
+	vec3 up=vec3(0,1,0),
+	f=N(t-ro),
+	r=N(cross(up,f)),
+	u=cross(f,r),
+	c=f*z,
+	i=c+uv.x*r+uv.y*u,
+	d=N(i);
+	return d;
+}
+vec3 render(vec2 uv) {
+	initCam();
+	float speed=T*.25;
+	vec3 col=vec3(0),
+	p=camPath(-speed+.5), ro=p,
+	ta=camPath(-speed),
+	rd=dir(uv,p,ta,.6);
+	float dd, i, edge;
+	if (march(p,rd,dd,edge,i)) {
+		float x=mix(.8,1.,rnd(p)), lf=S(80.,30.,length(p.z));
+		vec3 n=norm(p)*x, lp=vec3(LP.x,LP.y+lf,LP.z), l=N(lp-p);
+		float ao=calcAO(p,n), amb=.8+.2*n.y, ld=distance(lp,p),
+		ldd=distance(ro,p), dif=clamp(dot(l,n),.0,1.),
+		atten=1./(1.+ldd*.5+ldd*ldd*.25);
+		if (abs(p.y)<.992) {
+			ao*=(n.y*.5+.55);
+			col+=S(-.1,1.,amb*ao)+dif*ao*atten;
+			col+=atten*pow(clamp(dot(N(ro-p),n),.0,1.),.8);
+		} else col+=dif*ao;
+		col+=clamp(dot(-rd,l),.0,1.)*ao*atten;
+		col*=vec3(1,.65,.5)+.3*amb*ao*atten;
+		col*=tanh(ao*ao);
+		// outlines
+		float fog=1.-clamp(dd/200.,.0,1.), eo=getao(p,n,EDGESIZE);;
+		if(eo<.9) edge=max(edge,max(1.,fog));
+		eo=getao(p,n,-EDGESIZE);
+		if(eo<.9) edge=max(edge,max(1.,fog));
+		float fres=pow(clamp(1.+dot(rd,n),.0,1.),5.);
+		// dark
+		col*=S(2.,.0,edge)*(1.-fres);
+		// light
+		vec3 dp=abs(p-ro);
+    float ll=.3/tan(length(dp))+T;
+		dp=(.5+.5*cos(.78*T-vec3(0,-2,3)*fract(ll)-.5));
+		dp=p.y>1.01?vec3(1):.02/dp.bgg;
+		col=mix(col,fres*dp,S(.5,3.,edge));
+		// fog
+		col=S(-.5,2.,col);
+	}
+	// shine
+	float k=max(.3,1.-distance(LP,ro));
+	col+=hue(k*k*1.57+1.5)*k*.6;
+	// color grading
+	col=mix(col,vec3(1,.95,.9),S(.0,15.,distance(p,ro)));
+	col+=S(-1.,2.,clamp(i/300.,.0,1.))*k*vec3(1,.65,.5);
+	col=S(-.2,.8,col*1.2);
+	col=tanh(col*col*col);
+	col=sqrt(col);
+	// vignette
+	vec2 c=FC/R;
+	c*=1.-c.yx;
+	float vig=c.x*c.y*25.;
+	vig=pow(vig,.25);
+	col*=vig;
+	col=mix(col,col*col,S(1.,-1.,clamp(vig,.0,1.)));
+	return col*vec3(1,.85,.65);
+}
+void main() {
+	vec2 uv=(FC-.5*R)/MN;
+	vec3 col=render(uv);
+	O=vec4(col,1);
+}</script>
+<script>
+// Minimal fullscreen background renderer for the Yotta shader
+// (shader by Matthias Hurrle (@atzedent), MIT — see LICENSE-shader.txt)
+(function () {
+  const canvas = document.getElementById('bg')
+  const gl = canvas.getContext('webgl2')
+  if (!gl) { canvas.remove(); return } // fallback: plain black background
+
+  const RES = 0.5 // half resolution for performance
+  const fragSrc = document.getElementById('bgShader').textContent
+  const vertSrc = '#version 300 es\nprecision highp float;\nin vec4 position;\nvoid main(){gl_Position=position;}'
+
+  function compile(type, src) {
+    const s = gl.createShader(type)
+    gl.shaderSource(s, src)
+    gl.compileShader(s)
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(s))
+      return null
+    }
+    return s
+  }
+  const vs = compile(gl.VERTEX_SHADER, vertSrc)
+  const fs = compile(gl.FRAGMENT_SHADER, fragSrc)
+  if (!vs || !fs) { canvas.remove(); return }
+
+  const prog = gl.createProgram()
+  gl.attachShader(prog, vs)
+  gl.attachShader(prog, fs)
+  gl.linkProgram(prog)
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { canvas.remove(); return }
+  gl.useProgram(prog)
+
+  const buf = gl.createBuffer()
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, 1, -1, -1, 1, 1, 1, -1]), gl.STATIC_DRAW)
+  const pos = gl.getAttribLocation(prog, 'position')
+  gl.enableVertexAttribArray(pos)
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0)
+
+  const uTime = gl.getUniformLocation(prog, 'time')
+  const uRes = gl.getUniformLocation(prog, 'resolution')
+  const uWheel = gl.getUniformLocation(prog, 'wheel')
+
+  function resize() {
+    const dpr = Math.max(1, RES * window.devicePixelRatio)
+    canvas.width = window.innerWidth * dpr
+    canvas.height = window.innerHeight * dpr
+    gl.viewport(0, 0, canvas.width, canvas.height)
+  }
+  window.addEventListener('resize', resize)
+  resize()
+
+  function frame(now) {
+    gl.uniform1f(uTime, now * 1e-3)
+    gl.uniform2f(uRes, canvas.width, canvas.height)
+    gl.uniform2f(uWheel, 0, 0)
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+    requestAnimationFrame(frame)
+  }
+  requestAnimationFrame(frame)
+})()
+
+// Combined archive carousel — preserves the original lightbox while adopting
+// the artifact's rotating ring, drag/tap controls, and automatic advance.
+const ring = document.getElementById('ring')
+const stage = document.getElementById('stage')
+const cards = [...document.querySelectorAll('.card')]
+const progress = document.getElementById('progress')
+const label = document.getElementById('fileLabel')
+const signal = document.getElementById('signal')
+const toggle = document.getElementById('toggle')
+const lightbox = document.getElementById('lightbox')
+const lbImg = lightbox.querySelector('img')
+const lbCap = lightbox.querySelector('.caption')
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+let index = 0
+let rotation = 0
+let autoplay = !reducedMotion
+let timer = null
+const step = 360 / cards.length
+
+function setRingRadius() {
+  const cardWidth = Number.parseFloat(getComputedStyle(cards[0]).width)
+  const radius = cardWidth / (2 * Math.tan(Math.PI / cards.length)) + 28
+  document.documentElement.style.setProperty('--ring-r', radius + 'px')
+}
+
+function render() {
+  rotation = -index * step
+  ring.style.setProperty('--rotation', rotation + 'deg')
+  cards.forEach((card, cardIndex) => card.classList.toggle('active', cardIndex === index))
+  progress.style.transform = `scaleX(${(index + 1) / cards.length})`
+  label.textContent = `RECOVERED ARCHIVE // ${cards[index].dataset.label}`
+  signal.textContent = index % 3 === 2 ? 'RECONSTRUCTING' : 'CONTAINED'
+  toggle.textContent = autoplay ? 'PAUSE' : 'PLAY'
+  toggle.setAttribute('aria-pressed', autoplay ? 'true' : 'false')
+}
+
+function restart() {
+  window.clearInterval(timer)
+  if (autoplay) timer = window.setInterval(() => goTo(index + 1), 4200)
+}
+
+function goTo(nextIndex) {
+  index = (nextIndex + cards.length) % cards.length
+  render()
+  restart()
+}
+
+function openLightbox() {
+  const card = cards[index]
+  lbImg.src = card.src
+  lbImg.alt = card.alt
+  lbCap.textContent = `RECOVERED ARCHIVE // ${card.dataset.label} // CLEARANCE: DISK`
+  lightbox.classList.add('open')
+}
+
+function closeLightbox() {
+  lightbox.classList.remove('open')
+}
+
+document.getElementById('next').addEventListener('click', () => goTo(index + 1))
+document.getElementById('prev').addEventListener('click', () => goTo(index - 1))
+toggle.addEventListener('click', () => {
+  autoplay = !autoplay
+  render()
+  restart()
+})
+
+let dragging = false
+let startX = 0
+let startRotation = 0
+let moved = 0
+let downTarget = null
+
+stage.addEventListener('pointerdown', event => {
+  dragging = true
+  startX = event.clientX
+  startRotation = rotation
+  moved = 0
+  downTarget = event.target
+  stage.classList.add('dragging')
+  stage.setPointerCapture(event.pointerId)
+  window.clearInterval(timer)
+})
+stage.addEventListener('pointermove', event => {
+  if (!dragging) return
+  moved = event.clientX - startX
+  ring.style.setProperty('--rotation', startRotation + moved * 0.22 + 'deg')
+})
+function finishDrag(cancelled = false) {
+  if (!dragging) return
+  dragging = false
+  stage.classList.remove('dragging')
+  if (!cancelled && Math.abs(moved) > 35) {
+    index = (index + (moved < 0 ? 1 : -1) + cards.length) % cards.length
+  } else if (!cancelled && Math.abs(moved) < 10 && downTarget?.classList.contains('card')) {
+    const tappedIndex = Number.parseInt(downTarget.style.getPropertyValue('--index'), 10)
+    if (tappedIndex === index) openLightbox()
+    else index = tappedIndex
+  }
+  render()
+  restart()
+}
+
+stage.addEventListener('pointerup', () => finishDrag())
+stage.addEventListener('pointercancel', () => finishDrag(true))
+
+lightbox.addEventListener('click', event => {
+  if (event.target === lightbox || event.target.classList.contains('lightbox-close')) closeLightbox()
+})
+window.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeLightbox()
+  else if (event.key === 'ArrowRight') goTo(index + 1)
+  else if (event.key === 'ArrowLeft') goTo(index - 1)
+  else if (event.key === 'Enter' && !lightbox.classList.contains('open')) openLightbox()
+  else if (event.key === ' ') {
+    event.preventDefault()
+    autoplay = !autoplay
+    render()
+    restart()
+  }
+})
+window.addEventListener('resize', setRingRadius)
+window.setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  })
+}, 1000)
+
+setRingRadius()
+render()
+restart()
+</script>
+  <script src="/osiris-audio.js" data-soundcloud="https://soundcloud.com/killertapenetwork"></script>
+  <script src="/instagram-link.js" defer></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2fb5866b973da52',t:'MTc4NzUwMDk4NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

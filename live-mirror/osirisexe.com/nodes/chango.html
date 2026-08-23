@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<!--
+  OSIRIS.EXE — RECOVERED ARTIFACT: CHANGO
+  (chango = the Greater Antillean grackle — the Puerto Rican black bird;
+   it is in every plaza and it is always watching. The Network's people-hunter.)
+  Network surveillance terminal (crimson pole). In-world set dressing only.
+  Non-functional by design: no network calls, no search, canned data.
+  Canon: v4.1. Colors from the locked token set. The poles never blend —
+  phosphor #00FF46 appears only at the single hard contact edge (Rule 04 beat).
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OSIRIS.EXE — CHANGO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* Locked v3.0 tokens — do not introduce new hex values */
+    --duat-black:#010103;
+    --lake-midnight:#0B1226;
+    --deep-indigo:#1B2A5E;
+    --phosphor:#00FF46;      /* the Signal — hard contact edge only */
+    --phosphor-dim:#0A8A2E;
+    --crimson:#FF3A1A;       /* the Network — this artifact's pole */
+    --crimson-dim:#7A1A0C;
+    --bone:#D8D2C4;
+    --cream:#D5CDB8;
+    --resurrection:#C9A227;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--duat-black);
+    color:var(--bone);
+    font-family:'Space Mono',monospace;
+    line-height:1.5;
+    overflow-x:hidden;
+    -webkit-font-smoothing:none;
+  }
+  /* CRT vignette + scanlines */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:60;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(1,1,3,0) 0px,
+        rgba(1,1,3,0) 2px,
+        rgba(1,1,3,.28) 3px,
+        rgba(1,1,3,0) 4px);
+    mix-blend-mode:multiply;
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:61;
+    background:radial-gradient(ellipse at center,
+      rgba(1,1,3,0) 55%, rgba(1,1,3,.85) 100%);
+  }
+
+  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 64px;position:relative;z-index:2}
+
+  /* ---- Header ---- */
+  header{
+    border:1px solid var(--crimson-dim);
+    background:linear-gradient(180deg, rgba(122,26,12,.16), rgba(1,1,3,0));
+    padding:18px 20px;
+  }
+  .brandrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .glyph{
+    font-family:'VT323',monospace;font-size:52px;line-height:.8;
+    color:var(--crimson);
+    text-shadow:0 0 12px rgba(255,58,26,.55);
+    letter-spacing:2px;
+  }
+  .brand h1{
+    font-family:'VT323',monospace;font-weight:400;font-size:40px;
+    letter-spacing:6px;color:var(--crimson);
+    text-shadow:0 0 8px rgba(255,58,26,.4);
+  }
+  .brand .sub{font-size:12px;letter-spacing:3px;color:var(--crimson-dim);text-transform:uppercase}
+  .tag{
+    margin-left:auto;font-family:'VT323',monospace;font-size:20px;
+    color:var(--bone);border:1px solid var(--crimson-dim);padding:4px 10px;
+  }
+  .authline{
+    margin-top:14px;font-size:11px;letter-spacing:1.5px;color:var(--crimson-dim);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;text-transform:uppercase
+  }
+
+  /* ---- Console ---- */
+  .console{
+    margin-top:22px;border:1px solid var(--crimson-dim);
+    background:rgba(11,18,38,.35);
+    min-height:360px;padding:18px 20px;
+    font-size:14px;
+  }
+  .prompt{color:var(--crimson);font-weight:700}
+  .line{white-space:pre-wrap;word-break:break-word}
+  .line.dim{color:rgba(216,210,196,.45)} /* --bone at low opacity, not a new token */
+  .line.hit{color:var(--cream)}
+  .line.hit b{color:var(--crimson)}
+  .line.warn{color:var(--resurrection)}
+  .cursor{display:inline-block;width:9px;height:16px;background:var(--crimson);
+    vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  .bar{height:10px;border:1px solid var(--crimson-dim);margin:10px 0;position:relative;background:var(--duat-black)}
+  .bar > i{display:block;height:100%;width:0;background:var(--crimson);box-shadow:0 0 8px rgba(255,58,26,.6);transition:width .12s linear}
+  .pct{font-family:'VT323',monospace;font-size:20px;color:var(--crimson)}
+
+  table.results{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  table.results th,table.results td{text-align:left;padding:5px 8px;border-bottom:1px solid rgba(122,26,12,.4)}
+  table.results th{color:var(--crimson);font-family:'VT323',monospace;font-size:18px;letter-spacing:1px;font-weight:400}
+  table.results td.f{color:var(--crimson);font-weight:700}
+
+  /* AI profile block */
+  .ai{margin-top:18px;border:1px dashed var(--crimson-dim);padding:14px 16px;background:rgba(122,26,12,.1)}
+  .ai h3{font-family:'VT323',monospace;font-weight:400;font-size:22px;color:var(--crimson);letter-spacing:2px;margin-bottom:8px}
+  .ai .tags{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .ai .tags span{border:1px solid var(--crimson-dim);color:var(--cream);font-size:11px;padding:3px 8px;letter-spacing:1px}
+  .ai p{font-size:13px;color:var(--bone);margin:6px 0}
+
+  /* ---- The failure beat: hard phosphor contact edge (poles never blend) ---- */
+  .breach{
+    margin-top:20px;display:none;
+    border:1px solid var(--phosphor);
+    background:var(--duat-black);
+    padding:16px 18px;position:relative;
+  }
+  .breach.show{display:block;animation:snap .18s steps(2)}
+  @keyframes snap{0%{transform:translateX(-3px)}100%{transform:none}}
+  .breach .edge{
+    /* the contact edge: crimson meets phosphor at a hard line, no gradient */
+    position:absolute;left:0;top:0;bottom:0;width:6px;
+    background:linear-gradient(180deg,var(--crimson) 0 50%, var(--phosphor) 50% 100%);
+  }
+  .breach h3{font-family:'VT323',monospace;font-weight:400;font-size:24px;letter-spacing:2px;color:var(--phosphor);margin-bottom:6px;text-shadow:0 0 8px rgba(0,255,70,.5)}
+  .breach p{font-size:13px;color:var(--cream)}
+  .breach .sig{color:var(--phosphor);font-weight:700}
+  .breach .ceil{font-family:'VT323',monospace;font-size:20px;color:var(--phosphor)}
+
+  .controls{margin-top:22px;display:flex;gap:12px;flex-wrap:wrap}
+  button{
+    font-family:'VT323',monospace;font-size:20px;letter-spacing:2px;
+    background:var(--duat-black);color:var(--crimson);
+    border:1px solid var(--crimson);padding:6px 16px;cursor:pointer;
+  }
+  button:hover{background:var(--crimson);color:var(--duat-black)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.rerun:hover{background:var(--crimson)}
+
+  /* ---- Recovered field-surveillance plate + full-screen inspection ---- */
+  .chango-plate{margin-top:22px}
+  .chango-plate-button{
+    display:block;width:100%;padding:0;overflow:hidden;
+    border:1px solid var(--crimson-dim);background:var(--duat-black);
+    cursor:zoom-in;line-height:0;
+  }
+  .chango-plate-button:hover,
+  .chango-plate-button:focus-visible{
+    border-color:var(--crimson);background:var(--duat-black);
+    box-shadow:0 0 24px rgba(255,58,26,.2);outline:none;
+  }
+  .chango-plate img{display:block;width:100%;height:auto}
+  .chango-plate figcaption{
+    border:1px solid var(--crimson-dim);border-top:0;
+    padding:8px 10px;color:var(--crimson-dim);
+    font-family:'VT323',monospace;font-size:18px;letter-spacing:1px;
+  }
+  .chango-lightbox{
+    position:fixed;inset:0;z-index:100000;display:grid;place-items:center;
+    padding:2.5rem 1rem 1rem;background:rgba(1,1,3,.96);cursor:zoom-out;
+  }
+  .chango-lightbox[hidden]{display:none}
+  .chango-lightbox img{
+    display:block;max-width:calc(100vw - 2rem);max-height:calc(100dvh - 5rem);
+    width:auto;height:auto;object-fit:contain;border:1px solid var(--crimson);
+    box-shadow:0 0 32px rgba(255,58,26,.22);
+  }
+  .chango-lightbox-close{
+    position:absolute;top:1rem;right:1rem;z-index:2;
+  }
+  body.chango-lightbox-open{overflow:hidden}
+
+  footer{
+    margin-top:40px;border-top:1px solid var(--crimson-dim);padding-top:16px;
+    font-family:'VT323',monospace;font-size:20px;letter-spacing:1px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;color:var(--crimson-dim)
+  }
+  footer a{color:var(--bone);text-decoration:none}
+  footer a:hover{color:var(--crimson)}
+  .foreign{color:var(--resurrection)}
+
+  @media (max-width:560px){
+    .brand h1{font-size:30px;letter-spacing:3px}
+    .glyph{font-size:40px}
+    .tag{margin-left:0}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .cursor{animation:none}
+    .breach.show{animation:none}
+    .bar > i{transition:none}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brandrow">
+        <div class="glyph" aria-hidden="true">▚</div>
+        <div class="brand">
+          <h1>CHANGO</h1>
+          <div class="sub">Network Acquisition Interface · subprocess of EYE&nbsp;OF&nbsp;HORUS.EXE</div>
+          <div class="sub">the black grackle — it is in every plaza, and it is always watching</div>
+        </div>
+        <div class="tag">NODE&nbsp;06</div>
+      </div>
+      <div class="authline">
+        <span>CLEARANCE: PALE HORSE / COMPILATION</span>
+        <span>MODE: LOCATE &amp; SEIZE</span>
+        <span>WITNESS PROTOCOL: NONE</span>
+      </div>
+    </header>
+
+    <figure class="chango-plate">
+      <button
+        class="chango-plate-button"
+        id="changoPlateButton"
+        type="button"
+        aria-haspopup="dialog"
+        aria-controls="changoLightbox"
+        aria-label="Open the Chango field-surveillance plate full screen"
+      >
+        <img
+          src="/nodes/assets/chango-field-surveillance.webp"
+          alt="Chango cybernetic field-surveillance bird schematic for OSIRIS node 73"
+          width="1624"
+          height="968"
+        >
+      </button>
+      <figcaption>RECOVERED PLATE // CHANGO FIELD SURVEILLANCE UNIT // TAP TO INSPECT</figcaption>
+    </figure>
+
+    <main class="console" id="console" aria-live="polite" aria-label="Chango acquisition log">
+      <div class="line dim">recovered fragment — Network-side log, replayed from the archive</div>
+      <div class="line"><span class="prompt">chango&gt;</span> <span id="cmd"></span><span class="cursor" id="cur"></span></div>
+      <div id="stream"></div>
+    </main>
+
+    <div class="controls">
+      <button id="run" class="rerun">▶ REPLAY ACQUISITION</button>
+      <button id="skip" disabled>⏩ SKIP</button>
+    </div>
+
+    <footer>
+      <span class="foreign">FOREIGN SIGNALS DETECTED —
+        <a href="../transmissions/">TRANSMISSIONS ▸</a></span>
+      <a href="../">◂ RETURN TO TERMINAL</a>
+    </footer>
+  </div>
+
+  <div
+    class="chango-lightbox"
+    id="changoLightbox"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Chango field-surveillance plate"
+    hidden
+  >
+    <button class="chango-lightbox-close" id="changoLightboxClose" type="button">CLOSE [ESC]</button>
+    <img
+      src="/nodes/assets/chango-field-surveillance.webp"
+      alt="Chango cybernetic field-surveillance bird schematic for OSIRIS node 73"
+      width="1624"
+      height="968"
+    >
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  var trigger = document.getElementById('changoPlateButton');
+  var lightbox = document.getElementById('changoLightbox');
+  var closeButton = document.getElementById('changoLightboxClose');
+
+  function openLightbox(){
+    lightbox.hidden = false;
+    document.body.classList.add('chango-lightbox-open');
+    closeButton.focus();
+  }
+
+  function closeLightbox(){
+    lightbox.hidden = true;
+    document.body.classList.remove('chango-lightbox-open');
+    trigger.focus();
+  }
+
+  trigger.addEventListener('click', openLightbox);
+  closeButton.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', function(event){
+    if(event.target === lightbox) closeLightbox();
+  });
+  window.addEventListener('keydown', function(event){
+    if(event.key === 'Escape' && !lightbox.hidden) closeLightbox();
+  });
+})();
+</script>
+
+<script>
+(function(){
+  "use strict";
+  var stream = document.getElementById('stream');
+  var cmdEl  = document.getElementById('cmd');
+  var curEl  = document.getElementById('cur');
+  var runBtn = document.getElementById('run');
+  var skipBtn= document.getElementById('skip');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var timers = [], running = false;
+
+  // ---- Canned, in-world data. No real platforms, no real people. ----
+  var COMMAND = 'acquire --target "FRANCISCO OSIRIS SANCHEZ" --alias disk_darian,DISKDARIAN --tag DISK --ai --seize';
+
+  // In-world "platforms" — Network-facing surfaces from the story, not real sites.
+  var HITS = [
+    ['CIVIC LEDGER / COOK COUNTY',      'ledger://record/sanchez.f.osiris',   'SEIZED'],
+    ['PASEO BORICUA MESH',              'mesh://flag-array/node-09',          'RETROFIT'],
+    ['COMPILATION SCAN CACHE',          'compile://frank-model/authorized',   'MIRRORED'],
+    ['THE BLACKBOOK (1993)',            'archive://blackbook/taped-1982',     'SEALED'],
+    ['SIGNAL-DISRUPTOR / JOEL',         'device://disruptor/nest',            'JAMMED'],
+    ['SONY RADIO — CHILDHOOD BLOCK',    'static://chicago/does-not-travel',   'STATIONARY'],
+    ['VIEQUES LEDGER',                  'deep://cangrejo/underwater',         'UNREACHABLE']
+  ];
+
+  var AI_TAGS = ['diasporic','recursive','uncompliant','name-bearing','still-moving','relational'];
+
+  function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
+  function at(ms, fn){ timers.push(setTimeout(fn, reduce ? Math.min(ms,10) : ms)); }
+
+  function el(cls, html){
+    var d = document.createElement('div');
+    d.className = 'line' + (cls ? ' ' + cls : '');
+    d.innerHTML = html;
+    stream.appendChild(d);
+    d.scrollIntoView({block:'end'});
+    return d;
+  }
+
+  function typeCmd(text, done){
+    cmdEl.textContent = '';
+    if(reduce){ cmdEl.textContent = text; done(); return; }
+    var i = 0;
+    (function step(){
+      if(i <= text.length){
+        cmdEl.textContent = text.slice(0,i++);
+        at(18, step);
+      } else { done(); }
+    })();
+  }
+
+  function progress(done){
+    var wrap = document.createElement('div');
+    wrap.innerHTML = '<div class="bar"><i></i></div><div class="pct">0%</div>';
+    stream.appendChild(wrap);
+    var bar = wrap.querySelector('i'), pct = wrap.querySelector('.pct');
+    var p = 0;
+    (function tick(){
+      // The hunt closes fast, then stalls at the last fraction it can never index.
+      var step = p < 55 ? 7 : (p < 63 ? 2 : 0);
+      p += step;
+      if(p >= 63 && step === 0){
+        bar.style.width = '98.4375%';           // 63/64
+        pct.textContent = '63/64 — STALLED';
+        pct.style.color = 'var(--resurrection)';
+        at(500, done);
+        return;
+      }
+      bar.style.width = p + '%';
+      pct.textContent = p + '%';
+      at(reduce?5:110, tick);
+    })();
+  }
+
+  function results(done){
+    el('', '<span class="prompt">chango&gt;</span> cross-referencing surfaces…');
+    var tbl = document.createElement('table');
+    tbl.className = 'results';
+    tbl.innerHTML = '<tr><th>SURFACE</th><th>ADDRESS</th><th>STATE</th></tr>';
+    stream.appendChild(tbl);
+    var i = 0;
+    (function row(){
+      if(i < HITS.length){
+        var h = HITS[i++];
+        var tr = document.createElement('tr');
+        var seized = h[2] !== 'UNREACHABLE' && h[2] !== 'STATIONARY';
+        tr.innerHTML = '<td>'+h[0]+'</td><td class="dim">'+h[1]+'</td>'+
+                       '<td class="'+(seized?'f':'')+'">'+h[2]+'</td>';
+        tbl.appendChild(tr);
+        tr.scrollIntoView({block:'end'});
+        at(reduce?5:220, row);
+      } else { at(300, done); }
+    })();
+  }
+
+  function aiProfile(done){
+    el('', '<span class="prompt">chango&gt;</span> running free profile —');
+    var box = document.createElement('div');
+    box.className = 'ai';
+    box.innerHTML =
+      '<h3>◑ AI PROFILE — SUBJECT DIGEST</h3>' +
+      '<div class="tags">' + AI_TAGS.map(function(t){return '<span>'+t+'</span>';}).join('') + '</div>' +
+      '<p>Subject leaves a heavy record and a light footprint. Storage acquired on every '+
+      'surface where the subject was <em>held</em>. Acquisition confidence high across seized '+
+      'nodes.</p>' +
+      '<p class="warn">RISK FLAG: subject is transmitting, not resident. The record is '+
+      'complete; the subject is not in it.</p>';
+    stream.appendChild(box);
+    box.scrollIntoView({block:'end'});
+    at(reduce?10:900, done);
+  }
+
+  function breach(){
+    el('warn', '<span class="prompt">chango&gt;</span> attempting to close 1/64 — binding subject to record…');
+    at(reduce?10:700, function(){
+      var b = document.createElement('div');
+      b.className = 'breach';
+      b.innerHTML =
+        '<span class="edge" aria-hidden="true"></span>' +
+        '<h3>ACQUISITION FAILED</h3>' +
+        '<p>The last fraction will not seize. <span class="sig">SIGNAL PRESENT.</span> '+
+        'What is still moving cannot be owned — the record holds everything except the '+
+        'subject. A name outranks a record.</p>' +
+        '<p class="ceil">CAPTURE CEILING: 63/64 · MISSING: 1/64 (relationship)</p>' +
+        '<p class="sig">&gt; I AM THE DECISION HE LEFT BEHIND.</p>';
+      stream.appendChild(b);
+      // force reflow before adding show, so the snap animation runs on replay
+      void b.offsetWidth;
+      b.classList.add('show');
+      b.scrollIntoView({block:'end'});
+      el('dim', 'log ends — Network process terminated by unreachable target');
+      finish();
+    });
+  }
+
+  function finish(){
+    running = false;
+    curEl.style.display = 'none';
+    runBtn.disabled = false;
+    skipBtn.disabled = true;
+  }
+
+  function reset(){
+    clearTimers();
+    stream.innerHTML = '';
+    cmdEl.textContent = '';
+    curEl.style.display = '';
+  }
+
+  function run(){
+    if(running) return;
+    running = true;
+    reset();
+    runBtn.disabled = true;
+    skipBtn.disabled = false;
+    typeCmd(COMMAND, function(){
+      at(400, function(){
+        el('dim','initializing acquisition · witness protocol disabled');
+        el('dim','target locked — hunting across seized surfaces');
+        at(500, function(){
+          progress(function(){
+            results(function(){
+              aiProfile(function(){
+                breach();
+              });
+            });
+          });
+        });
+      });
+    });
+  }
+
+  function skip(){
+    // Fast-forward: blow through remaining timers by replaying with reduce semantics.
+    clearTimers();
+    var wasReduce = reduce; reduce = true;
+    stream.innerHTML=''; running=false; run();
+    reduce = wasReduce;
+  }
+
+  runBtn.addEventListener('click', run);
+  skipBtn.addEventListener('click', skip);
+
+  // Autoplay on load unless reduced motion (then show instantly on demand).
+  if(reduce){
+    // Render the whole log statically for reduced-motion users.
+    run();
+  } else {
+    at(600, run);
+  }
+})();
+</script>
+  <script src="/instagram-link.js" defer></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2fb5874ebacda52',t:'MTc4NzUwMDk4Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

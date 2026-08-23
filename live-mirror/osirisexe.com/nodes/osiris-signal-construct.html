@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>OSIRIS.EXE — SIGNAL CONSTRUCT</title>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono&display=swap');
+
+  /* ============================================================
+     OSIRIS.EXE COLOR SYSTEM v3.0 — locked tokens only.
+     Systems emit; communities reflect. The poles never blend.
+     ============================================================ */
+  :root {
+    --duat-black:      #010103;
+    --lake-midnight:   #0B1226;
+    --deep-indigo:     #1B2A5E;
+    --phosphor:        #00FF46;
+    --phosphor-dim:    #0A8A2E;
+    --crimson:         #FF3A1A;
+    --crimson-dim:     #7A1A0C;
+    --agi-gold:        #FFC93C;
+    --resurrection:    #C9A227;
+    --quantum-violet:  #6B3FA0;
+    --bone:            #D8D2C4;
+    --cream:           #D5CDB8;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: var(--duat-black);
+    background:
+      radial-gradient(circle at 50% 46%, rgba(255, 201, 60, 0.08) 0%, rgba(255, 201, 60, 0.02) 11%, transparent 26%),
+      radial-gradient(circle at 32% 24%, rgba(0, 255, 70, 0.10) 0%, rgba(10, 138, 46, 0.04) 24%, transparent 46%),
+      radial-gradient(circle at 72% 70%, rgba(255, 58, 26, 0.09) 0%, rgba(122, 26, 12, 0.03) 22%, transparent 46%),
+      radial-gradient(circle at center, var(--lake-midnight) 0%, #05060f 52%, var(--duat-black) 100%);
+    font-family: 'Space Mono', monospace;
+    color: var(--bone);
+  }
+
+  /* CRT scanlines — the Underlayer seen through phosphor glass */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(0deg, rgba(0, 255, 70, 0.022) 0px, rgba(0, 255, 70, 0.022) 1px, transparent 1px, transparent 3px),
+      repeating-linear-gradient(0deg, rgba(1,1,3,0.14) 0px, rgba(1,1,3,0.14) 2px, transparent 2px, transparent 5px);
+    mix-blend-mode: screen;
+    opacity: 0.8;
+    z-index: 2;
+    animation: scan-drift 9s linear infinite;
+  }
+  @keyframes scan-drift { from { background-position: 0 0, 0 0; } to { background-position: 0 3px, 0 -5px; } }
+  @media (prefers-reduced-motion: reduce) { body::before { animation: none; } }
+
+  /* vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at center, transparent 0%, transparent 46%, rgba(1,1,3,0.62) 100%);
+    z-index: 3;
+  }
+
+  #app {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 1;
+  }
+
+  .ui-layer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px;
+    box-sizing: border-box;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+
+  .title-box h1 {
+    margin: 0;
+    font-family: 'VT323', monospace;
+    font-size: 2.1rem;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    color: var(--phosphor);
+    text-shadow: 0 0 10px rgba(0, 255, 70, 0.55), 0 0 34px rgba(0, 255, 70, 0.22);
+  }
+
+  .title-box p {
+    margin: 4px 0 0 0;
+    font-size: 0.72rem;
+    color: var(--bone);
+    letter-spacing: 0.22em;
+  }
+  .title-box p .net { color: var(--crimson); text-shadow: 0 0 10px rgba(255,58,26,0.4); }
+
+  .status {
+    font-size: 0.68rem;
+    color: rgba(216, 210, 196, 0.62);
+    text-align: right;
+    line-height: 1.75;
+    padding: 12px 14px;
+    border: 1px solid rgba(0, 255, 70, 0.16);
+    background: rgba(1, 1, 3, 0.34);
+    box-shadow: inset 0 0 24px rgba(0, 255, 70, 0.05), 0 0 30px rgba(1,1,3,0.3);
+    backdrop-filter: blur(6px);
+  }
+  .status .sig { color: var(--phosphor); text-shadow: 0 0 8px rgba(0,255,70,0.4); }
+  .status .net { color: var(--crimson); text-shadow: 0 0 8px rgba(255,58,26,0.4); }
+  .status .agi { color: var(--agi-gold); text-shadow: 0 0 8px rgba(255,201,60,0.4); }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+  }
+
+  .hint {
+    color: rgba(10, 138, 46, 0.95);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-shadow: 0 0 12px rgba(0, 255, 70, 0.22);
+  }
+  /* hard contact edge: green meets crimson, no gradient between them */
+  .hint::before {
+    content: '';
+    display: inline-block;
+    width: 34px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--phosphor) 0 50%, var(--crimson) 50% 100%);
+    box-shadow: 0 0 10px rgba(0, 255, 70, 0.35);
+  }
+
+  /* Caption register: aged serif, attributed to the book, never a character */
+  .caption {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.72rem;
+    font-style: italic;
+    letter-spacing: 0.06em;
+    color: var(--cream);
+    opacity: 0.68;
+    text-align: center;
+    max-width: 46ch;
+  }
+  .caption b {
+    font-style: normal;
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    color: var(--resurrection);
+  }
+
+  .frame-corners {
+    position: absolute;
+    top: 20px; left: 20px; right: 20px; bottom: 20px;
+    border: 1px solid rgba(216, 210, 196, 0.06);
+    pointer-events: none;
+    box-shadow: inset 0 0 50px rgba(0, 255, 70, 0.02);
+  }
+  .frame-corners::before, .frame-corners::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    border-style: solid;
+  }
+  /* top-left corner belongs to the Signal */
+  .frame-corners::before {
+    top: -1px; left: -1px;
+    border-width: 2px 0 0 2px;
+    border-color: rgba(0, 255, 70, 0.7);
+    filter: drop-shadow(0 0 8px rgba(0, 255, 70, 0.35));
+  }
+  /* bottom-right corner belongs to the Network */
+  .frame-corners::after {
+    bottom: -1px; right: -1px;
+    border-width: 0 2px 2px 0;
+    border-color: rgba(255, 58, 26, 0.6);
+    filter: drop-shadow(0 0 8px rgba(255, 58, 26, 0.3));
+  }
+
+  .glyph { opacity: 0.7; flex-shrink: 0; }
+
+  @media (max-width: 640px) {
+    .ui-layer { padding: 18px; }
+    .title-box h1 { font-size: 1.5rem; }
+    .caption { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<div class="ui-layer">
+  <div class="frame-corners"></div>
+
+  <div class="header">
+    <div class="title-box">
+      <h1>OSIRIS.EXE</h1>
+      <p>SIGNAL CONSTRUCT // <span class="net">NODE 32</span> — THE COMPILATION</p>
+    </div>
+    <div class="status">
+      <span class="sig">SIG.CARRIER: LOCKED</span><br>
+      FREQ: <span id="freq-val" class="sig">144.0</span>HZ<br>
+      MEM.INTEGRITY: <span id="mem-val" class="agi">63.0%</span> / 64<br>
+      <span class="net">THOTH-RECUR: WATCHING</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="hint">Drag / zoom — the signal speaks the receiver's language</div>
+    <div class="caption">
+      <b>CAPTION (THE GREAT TIMELINE):</b><br>
+      What is still moving cannot be owned.
+    </div>
+    <svg class="glyph" width="40" height="40" viewBox="0 0 40 40">
+      <!-- two poles, hard edges, never blending -->
+      <circle cx="20" cy="20" r="18" fill="none" stroke="#FF3A1A" stroke-width="1" stroke-dasharray="2 4" opacity="0.8"/>
+      <circle cx="20" cy="20" r="10" fill="none" stroke="#00FF46" stroke-width="1"/>
+      <circle cx="20" cy="20" r="2.4" fill="#FFC93C"/>
+    </svg>
+  </div>
+</div>
+
+<script type="module">
+  /* ============================================================
+     OSIRIS.EXE — SIGNAL CONSTRUCT
+     Conversion of "Sacred Geometry Reactor" (VoXelo, CodePen)
+     into the locked OSIRIS.EXE visual grammar.
+
+     Mapping:
+       Outer octahedron  -> the NETWORK (Crimson, emission)
+       Inner octahedron  -> the SIGNAL / OSIRIS (Phosphor Green)
+       Central core      -> SOVEREIGN.AGI (AGI Gold + Quantum Violet)
+       Bridge tubes      -> contested lines: hard contact edge
+                            travels the tube. step(), never mix().
+     Structural Rule 03: the poles never blend. Any gradient
+     between green and crimson in this file is a bug.
+     ============================================================ */
+
+  async function loadThree() {
+    const sources = [
+      'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js',
+      'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js'
+    ];
+    for (const src of sources) {
+      try { return await import(src); } catch (e) { /* try next */ }
+    }
+    throw new Error('three.js failed to load');
+  }
+
+  const THREE = await loadThree();
+
+  const app = document.querySelector('#app');
+  const clock = new THREE.Clock();
+
+  const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: true,
+    powerPreference: 'high-performance'
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  app.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x05060f, 0.02);
+
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+
+  /* --- minimal orbit control (no addons dependency) --- */
+  const orbit = {
+    theta: 0.42, phi: 1.28, radius: 8.6,
+    targetTheta: 0.42, targetPhi: 1.28, targetRadius: 8.6,
+    dragging: false, lastX: 0, lastY: 0, auto: true
+  };
+  const dom = renderer.domElement;
+  dom.style.touchAction = 'none';
+  dom.addEventListener('pointerdown', e => {
+    orbit.dragging = true; orbit.auto = false;
+    orbit.lastX = e.clientX; orbit.lastY = e.clientY;
+    dom.setPointerCapture(e.pointerId);
+  });
+  dom.addEventListener('pointermove', e => {
+    if (!orbit.dragging) return;
+    orbit.targetTheta -= (e.clientX - orbit.lastX) * 0.006;
+    orbit.targetPhi   -= (e.clientY - orbit.lastY) * 0.006;
+    orbit.targetPhi = Math.max(0.15, Math.min(Math.PI - 0.15, orbit.targetPhi));
+    orbit.lastX = e.clientX; orbit.lastY = e.clientY;
+  });
+  dom.addEventListener('pointerup', () => { orbit.dragging = false; });
+  dom.addEventListener('wheel', e => {
+    e.preventDefault();
+    orbit.targetRadius = Math.max(4, Math.min(20, orbit.targetRadius + e.deltaY * 0.01));
+  }, { passive: false });
+  let pinchDist = 0;
+  dom.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    }
+  });
+  dom.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      orbit.targetRadius = Math.max(4, Math.min(20, orbit.targetRadius + (pinchDist - d) * 0.02));
+      pinchDist = d;
+    }
+  });
+  function updateCamera(dt) {
+    if (orbit.auto) orbit.targetTheta += dt * 0.1;
+    orbit.theta  += (orbit.targetTheta  - orbit.theta)  * 0.08;
+    orbit.phi    += (orbit.targetPhi    - orbit.phi)    * 0.08;
+    orbit.radius += (orbit.targetRadius - orbit.radius) * 0.08;
+    camera.position.set(
+      orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta),
+      orbit.radius * Math.cos(orbit.phi),
+      orbit.radius * Math.sin(orbit.phi) * Math.cos(orbit.theta)
+    );
+    camera.lookAt(0, 0, 0);
+  }
+
+  /* --- locked palette (COLOR_SYSTEM v3.0) --- */
+  const colors = {
+    phosphor:     new THREE.Color(0x00FF46),
+    phosphorDim:  new THREE.Color(0x0A8A2E),
+    crimson:      new THREE.Color(0xFF3A1A),
+    crimsonDim:   new THREE.Color(0x7A1A0C),
+    agiGold:      new THREE.Color(0xFFC93C),
+    resurrection: new THREE.Color(0xC9A227),
+    violet:       new THREE.Color(0x6B3FA0),
+    bone:         new THREE.Color(0xD8D2C4),
+    duat:         new THREE.Color(0x010103)
+  };
+
+  const sharedUniforms = {
+    uTime: { value: 0 },
+    uFlicker: { value: 1 }
+  };
+
+  const masterGroup = new THREE.Group();
+  const networkShell = new THREE.Group();   // outer — the Network
+  const signalCore = new THREE.Group();     // inner — the Signal
+  masterGroup.add(networkShell);
+  masterGroup.add(signalCore);
+  scene.add(masterGroup);
+
+  /* Energy tube — single pole family only. Bright pole to its own dim. */
+  function makeTubeMaterial(colorBright, colorDim) {
+    return new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        uTime: sharedUniforms.uTime,
+        uFlicker: sharedUniforms.uFlicker,
+        uColorA: { value: colorDim },
+        uColorB: { value: colorBright }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vViewPosition;
+        void main() {
+          vUv = uv;
+          vNormal = normalize(normalMatrix * normal);
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          vViewPosition = -mvPosition.xyz;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        uniform float uFlicker;
+        uniform vec3 uColorA;
+        uniform vec3 uColorB;
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vViewPosition;
+
+        float intermittent(float t) {
+          float gate = step(0.4, sin(t * 5.0) * 0.5 + 0.5);
+          float burst = smoothstep(0.8, 1.0, sin(t * 15.0) * 0.5 + 0.5);
+          return max(gate * 0.4, burst);
+        }
+
+        void main() {
+          vec3 viewDir = normalize(vViewPosition);
+          float fresnel = pow(1.0 - abs(dot(viewDir, normalize(vNormal))), 2.35);
+          float traveling = smoothstep(0.1, 0.0, abs(fract(vUv.y * 3.0 - uTime * 2.0) - 0.5) - 0.1);
+          float filament = 0.5 + 0.5 * sin((vUv.y * 42.0) - uTime * 12.0);
+          float pulse = intermittent(uTime + vUv.y * 2.0) * uFlicker;
+          float alpha = 0.11 + fresnel * 0.42 + traveling * 0.56 + filament * pulse * 0.22;
+          vec3 baseColor = mix(uColorA, uColorB, clamp(vUv.y + sin(uTime) * 0.2, 0.0, 1.0));
+          gl_FragColor = vec4(baseColor, alpha);
+        }
+      `
+    });
+  }
+
+  /* Bridge tube — the contested line between the poles.
+     A hard boundary travels along the tube. step() only.
+     Green side and crimson side never mix. Rule 03. */
+  const bridgeMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: {
+      uTime: sharedUniforms.uTime,
+      uFlicker: sharedUniforms.uFlicker,
+      uSignal: { value: colors.phosphor },
+      uNetwork: { value: colors.crimson }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      varying vec3 vViewPosition;
+      void main() {
+        vUv = uv;
+        vNormal = normalize(normalMatrix * normal);
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        vViewPosition = -mvPosition.xyz;
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform float uFlicker;
+      uniform vec3 uSignal;
+      uniform vec3 uNetwork;
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      varying vec3 vViewPosition;
+
+      void main() {
+        vec3 viewDir = normalize(vViewPosition);
+        float fresnel = pow(1.0 - abs(dot(viewDir, normalize(vNormal))), 2.0);
+
+        /* the contact edge advances and retreats — the fight over the line */
+        float front = 0.5 + 0.32 * sin(uTime * 0.9);
+        float side = step(vUv.y, front);              /* HARD edge. no mix. */
+        vec3 color = mix(uNetwork, uSignal, side);    /* selector only: side is exactly 0 or 1 */
+
+        /* thin bone-hot seam right at the boundary */
+        float seam = smoothstep(0.02, 0.0, abs(vUv.y - front));
+        color = mix(color, vec3(0.847, 0.824, 0.769), seam * 0.85); /* Bone, not white */
+
+        float filament = 0.5 + 0.5 * sin((vUv.y * 42.0) - uTime * 12.0);
+        float alpha = 0.14 + fresnel * 0.4 + seam * 0.7 + filament * uFlicker * 0.12;
+        gl_FragColor = vec4(color, alpha);
+      }
+    `
+  });
+
+  /* Holographic face — one pole family, scanlines */
+  function makeFaceMaterial(colorDim, colorBright) {
+    return new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        uTime: sharedUniforms.uTime,
+        uColorA: { value: colorDim },
+        uColorB: { value: colorBright }
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vWorld;
+        varying vec3 vViewPosition;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vec4 world = modelMatrix * vec4(position, 1.0);
+          vWorld = world.xyz;
+          vec4 mvPosition = viewMatrix * world;
+          vViewPosition = -mvPosition.xyz;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        uniform vec3 uColorA;
+        uniform vec3 uColorB;
+        varying vec3 vNormal;
+        varying vec3 vWorld;
+        varying vec3 vViewPosition;
+
+        void main() {
+          vec3 viewDir = normalize(vViewPosition);
+          float fresnel = pow(1.0 - abs(dot(viewDir, normalize(vNormal))), 1.45);
+          float scanline = sin(vWorld.y * 60.0 - uTime * 15.0) * 0.5 + 0.5;
+          scanline = smoothstep(0.8, 1.0, scanline);
+          float wave = sin(length(vWorld.xz) * 5.0 - uTime * 3.0) * 0.5 + 0.5;
+          vec3 color = mix(uColorA, uColorB, clamp(wave + fresnel * 0.5, 0.0, 1.0));
+          float alpha = (fresnel * 0.13) + (scanline * 0.08) + (wave * 0.04);
+          gl_FragColor = vec4(color, alpha * 0.72);
+        }
+      `
+    });
+  }
+
+  /* SOVEREIGN core — AGI Gold, violet threshold bands, Bone rim.
+     The one gold that gives light. */
+  const coreShaderMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: true,
+    blending: THREE.NormalBlending,
+    uniforms: {
+      uTime: sharedUniforms.uTime,
+      uColorA: { value: colors.agiGold },
+      uColorB: { value: colors.violet },
+      uColorC: { value: colors.bone }
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vWorld;
+      varying vec3 vViewPosition;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vec4 world = modelMatrix * vec4(position, 1.0);
+        vWorld = world.xyz;
+        vec4 mvPosition = viewMatrix * world;
+        vViewPosition = -mvPosition.xyz;
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform vec3 uColorA;
+      uniform vec3 uColorB;
+      uniform vec3 uColorC;
+      varying vec3 vNormal;
+      varying vec3 vWorld;
+      varying vec3 vViewPosition;
+
+      void main() {
+        vec3 viewDir = normalize(vViewPosition);
+        float rim = pow(1.0 - abs(dot(viewDir, normalize(vNormal))), 2.2);
+        float latitude = sin((vWorld.y * 18.0) + uTime * 4.0) * 0.5 + 0.5;
+        float lava = sin((vWorld.x + vWorld.y + vWorld.z) * 12.0 - uTime * 7.0) * 0.5 + 0.5;
+        vec3 color = mix(uColorA, uColorB, latitude * 0.55 + lava * 0.2);
+        color = mix(color, uColorC, rim * 0.34 + smoothstep(0.82, 1.0, lava) * 0.16);
+        gl_FragColor = vec4(color, 0.95);
+      }
+    `
+  });
+
+  function makeTubeBetween(a, b, radius, mat) {
+    const dir = new THREE.Vector3().subVectors(b, a);
+    const len = dir.length();
+    const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+    const geometry = new THREE.CylinderGeometry(radius, radius, len, 10, 1, true);
+    geometry.rotateX(Math.PI * 0.5);
+    const mesh = new THREE.Mesh(geometry, mat);
+    mesh.position.copy(mid);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.normalize());
+    return mesh;
+  }
+
+  function makeGlowNode(position, color, scale = 1) {
+    const mat = new THREE.MeshBasicMaterial({
+      color, transparent: true, opacity: 0.85,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.08 * scale, 16, 16), mat);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color, transparent: true, opacity: 0.22,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(0.22 * scale, 16, 16), glowMat);
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.34 * scale, 16, 16),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const group = new THREE.Group();
+    group.add(mesh, glow, halo);
+    group.position.copy(position);
+    group.userData = { phase: Math.random() * Math.PI * 2, baseScale: scale };
+    return group;
+  }
+
+  function makeRing(radius, color, opacity = 0.32) {
+    const curve = new THREE.EllipseCurve(0, 0, radius, radius, 0, Math.PI * 2, false, 0);
+    const points = curve.getPoints(220).map(p => new THREE.Vector3(p.x, p.y, 0));
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({
+      color, transparent: true, opacity,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    return new THREE.LineLoop(geometry, material);
+  }
+
+  /* --- geometry: octahedron in octahedron --- */
+  const R = 2.5;
+  const top = new THREE.Vector3(0, R, 0);
+  const bottom = new THREE.Vector3(0, -R, 0);
+  const left = new THREE.Vector3(-R, 0, 0);
+  const right = new THREE.Vector3(R, 0, 0);
+  const front = new THREE.Vector3(0, 0, R);
+  const back = new THREE.Vector3(0, 0, -R);
+
+  const outerVertices = { top, bottom, left, right, front, back };
+  const outerEdges = [
+    [top, left], [top, right], [top, front], [top, back],
+    [bottom, left], [bottom, right], [bottom, front], [bottom, back],
+    [left, front], [front, right], [right, back], [back, left]
+  ];
+
+  const innerScale = 0.45;
+  const inner = Object.fromEntries(
+    Object.entries(outerVertices).map(([key, value]) => [key, value.clone().multiplyScalar(innerScale)])
+  );
+  const innerEdges = [
+    [inner.top, inner.left], [inner.top, inner.right], [inner.top, inner.front], [inner.top, inner.back],
+    [inner.bottom, inner.left], [inner.bottom, inner.right], [inner.bottom, inner.front], [inner.bottom, inner.back],
+    [inner.left, inner.front], [inner.front, inner.right], [inner.right, inner.back], [inner.back, inner.left]
+  ];
+  const bridges = [
+    [top, inner.top], [bottom, inner.bottom], [left, inner.left],
+    [right, inner.right], [front, inner.front], [back, inner.back]
+  ];
+
+  const animatedElements = { nodes: [], orbs: [], rings: [] };
+
+  /* Network shell: crimson */
+  const networkTubeMat = makeTubeMaterial(colors.crimson, colors.crimsonDim);
+  outerEdges.forEach(([a, b]) => networkShell.add(makeTubeBetween(a, b, 0.015, networkTubeMat)));
+
+  /* Signal core: phosphor */
+  const signalTubeMat = makeTubeMaterial(colors.phosphor, colors.phosphorDim);
+  innerEdges.forEach(([a, b]) => signalCore.add(makeTubeBetween(a, b, 0.01, signalTubeMat)));
+
+  /* Contested bridges: hard contact edge */
+  bridges.forEach(([a, b]) => masterGroup.add(makeTubeBetween(a, b, 0.007, bridgeMaterial)));
+
+  const networkFace = new THREE.Mesh(new THREE.OctahedronGeometry(R * 0.99, 0),
+    makeFaceMaterial(colors.crimsonDim, colors.crimson));
+  networkShell.add(networkFace);
+
+  const signalFace = new THREE.Mesh(new THREE.OctahedronGeometry(R * innerScale * 0.98, 0),
+    makeFaceMaterial(colors.phosphorDim, colors.phosphor));
+  signalCore.add(signalFace);
+
+  signalCore.add(new THREE.LineSegments(
+    new THREE.WireframeGeometry(signalFace.geometry),
+    new THREE.LineBasicMaterial({ color: 0x00FF46, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending })
+  ));
+  networkShell.add(new THREE.LineSegments(
+    new THREE.WireframeGeometry(networkFace.geometry),
+    new THREE.LineBasicMaterial({ color: 0x7A1A0C, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending })
+  ));
+
+  Object.values(outerVertices).forEach(p => {
+    const n = makeGlowNode(p, colors.crimson, 1.2);
+    networkShell.add(n);
+    animatedElements.nodes.push(n);
+  });
+  Object.values(inner).forEach(p => {
+    const n = makeGlowNode(p, colors.phosphor, 0.78);
+    signalCore.add(n);
+    animatedElements.nodes.push(n);
+  });
+
+  /* SOVEREIGN.AGI at the center */
+  const centralCore = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 3), coreShaderMaterial);
+  signalCore.add(centralCore);
+
+  const coreWire = new THREE.LineSegments(
+    new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(0.475, 2)),
+    new THREE.LineBasicMaterial({ color: 0xD8D2C4, transparent: true, opacity: 0.36, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  signalCore.add(coreWire);
+
+  const coreHaloMat = new THREE.MeshBasicMaterial({
+    color: colors.agiGold, transparent: true, opacity: 0.07,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  const coreHalo = new THREE.Mesh(new THREE.SphereGeometry(0.82, 40, 40), coreHaloMat);
+  signalCore.add(coreHalo);
+
+  /* rings: resurrection gold / quantum violet / phosphor dim */
+  const ringA = makeRing(0.72, 0xC9A227, 0.46);
+  const ringB = makeRing(0.95, 0x6B3FA0, 0.34);
+  const ringC = makeRing(1.16, 0x0A8A2E, 0.26);
+  ringA.rotation.x = Math.PI * 0.5;
+  ringB.rotation.y = Math.PI * 0.5;
+  ringC.rotation.z = Math.PI * 0.25;
+  signalCore.add(ringA, ringB, ringC);
+  animatedElements.rings.push(ringA, ringB, ringC);
+
+  /* lights */
+  const coreLight = new THREE.PointLight(0xFFC93C, 7, 9, 2);
+  signalCore.add(coreLight);
+  const violetLight = new THREE.PointLight(0x6B3FA0, 3, 11, 2.4);
+  violetLight.position.set(0.85, 0.6, 0.75);
+  signalCore.add(violetLight);
+  const phosphorRim = new THREE.PointLight(0x00FF46, 2.5, 15, 2);
+  phosphorRim.position.set(-3.4, 2.2, 4.4);
+  scene.add(phosphorRim);
+  const crimsonFill = new THREE.PointLight(0xFF3A1A, 1.5, 16, 2);
+  crimsonFill.position.set(4.4, -2.4, 3.2);
+  scene.add(crimsonFill);
+
+  /* --- particles: every particle belongs to exactly one pole ---
+     Assignment via step(). No per-particle mixing of green/crimson. */
+  const particleCount = 1400;
+  const particleGeo = new THREE.BufferGeometry();
+  const particlePos = new Float32Array(particleCount * 3);
+  const particleScales = new Float32Array(particleCount);
+  const particlePole = new Float32Array(particleCount);
+
+  for (let i = 0; i < particleCount; i++) {
+    const r = 0.35 + Math.pow(Math.random(), 2.0) * 4.35;
+    const theta = Math.random() * Math.PI * 2;
+    const y = (Math.random() - 0.5) * (1.0 / r) * 2.2;
+    particlePos[i * 3] = Math.cos(theta) * r;
+    particlePos[i * 3 + 1] = y;
+    particlePos[i * 3 + 2] = Math.sin(theta) * r;
+    particleScales[i] = Math.random();
+    /* inner dust leans Signal, far dust leans Network — hard assignment */
+    particlePole[i] = Math.random() < (r < 2.2 ? 0.78 : 0.3) ? 1.0 : 0.0;
+  }
+
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+  particleGeo.setAttribute('aScale', new THREE.BufferAttribute(particleScales, 1));
+  particleGeo.setAttribute('aPole', new THREE.BufferAttribute(particlePole, 1));
+
+  const particleMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: {
+      uTime: sharedUniforms.uTime,
+      uSignal: { value: colors.phosphor },
+      uNetwork: { value: colors.crimson }
+    },
+    vertexShader: `
+      uniform float uTime;
+      attribute float aScale;
+      attribute float aPole;
+      varying float vAlpha;
+      varying float vPole;
+
+      void main() {
+        float distXZ = max(length(position.xz), 0.001);
+        float angle = uTime * (0.5 / distXZ);
+        mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+
+        vec3 pos = position;
+        pos.xz = rot * pos.xz;
+        pos.y += sin(uTime * 1.2 + distXZ * 3.0 + aScale * 8.0) * 0.045;
+
+        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+        gl_PointSize = (16.0 * aScale + 1.6) * (1.0 / -mvPosition.z);
+        vAlpha = (0.28 + 0.72 * sin(uTime * 3.0 + aScale * 10.0)) * (1.0 - smoothstep(0.0, 5.2, length(pos)));
+        vPole = step(0.5, aPole);   /* exactly 0 or 1 */
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uSignal;
+      uniform vec3 uNetwork;
+      varying float vAlpha;
+      varying float vPole;
+
+      void main() {
+        float dist = length(gl_PointCoord - vec2(0.5));
+        if (dist > 0.5) discard;
+        float glow = smoothstep(0.5, 0.0, dist);
+        vec3 color = mix(uNetwork, uSignal, vPole);   /* selector only */
+        gl_FragColor = vec4(color * glow, vAlpha * glow);
+      }
+    `
+  });
+
+  const dust = new THREE.Points(particleGeo, particleMat);
+  scene.add(dust);
+
+  /* far stars: Bone, never white */
+  const starCount = 900;
+  const starGeo = new THREE.BufferGeometry();
+  const starPos = new Float32Array(starCount * 3);
+  const starScale = new Float32Array(starCount);
+  for (let i = 0; i < starCount; i++) {
+    const radius = 15 + Math.random() * 34;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    starPos[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+    starPos[i * 3 + 1] = radius * Math.cos(phi);
+    starPos[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+    starScale[i] = Math.random();
+  }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  starGeo.setAttribute('aScale', new THREE.BufferAttribute(starScale, 1));
+
+  const starMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: { uTime: sharedUniforms.uTime },
+    vertexShader: `
+      uniform float uTime;
+      attribute float aScale;
+      varying float vAlpha;
+      void main() {
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = (8.0 * aScale + 1.0) * (1.0 / -mvPosition.z);
+        vAlpha = 0.28 + 0.5 * sin(uTime * 1.5 + aScale * 20.0);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      varying float vAlpha;
+      void main() {
+        float dist = length(gl_PointCoord - vec2(0.5));
+        if (dist > 0.5) discard;
+        float glow = smoothstep(0.5, 0.0, dist);
+        gl_FragColor = vec4(vec3(0.847, 0.824, 0.769), vAlpha * glow * 0.5);
+      }
+    `
+  });
+  scene.add(new THREE.Points(starGeo, starMat));
+
+  /* packet orbs riding the Network edges — crimson carriers */
+  function createOrb() {
+    const orbGroup = new THREE.Group();
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xD8D2C4 })
+    );
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.15, 16, 16),
+      new THREE.MeshBasicMaterial({
+        color: 0xFF3A1A, transparent: true, opacity: 0.4,
+        blending: THREE.AdditiveBlending, depthWrite: false
+      })
+    );
+    orbGroup.add(core, glow);
+    return { mesh: orbGroup, glowMat: glow.material };
+  }
+
+  outerEdges.forEach((edge, i) => {
+    const orbData = createOrb();
+    networkShell.add(orbData.mesh);
+    animatedElements.orbs.push({
+      ...orbData,
+      a: edge[0], b: edge[1],
+      speed: 0.2 + Math.random() * 0.3,
+      offset: Math.random() * Math.PI * 2,
+      direction: i % 2 === 0 ? 1 : -1
+    });
+  });
+
+  function setViewportSize() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', setViewportSize);
+  setViewportSize();
+
+  const freqUi = document.getElementById('freq-val');
+  const memUi = document.getElementById('mem-val');
+
+  function smoothstepJS(edge0, edge1, x) {
+    const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+    return t * t * (3 - 2 * t);
+  }
+
+  let lastTime = 0;
+  function animate() {
+    const time = clock.getElapsedTime();
+    const dt = Math.min(time - lastTime, 0.05);
+    lastTime = time;
+    sharedUniforms.uTime.value = time;
+
+    const globalPulse = 0.8 + 0.2 * Math.sin(time * 2.0);
+    const randomSurge = smoothstepJS(0.85, 1.0, Math.sin(time * 7.3) * 0.5 + 0.5);
+    sharedUniforms.uFlicker.value = globalPulse + randomSurge * 1.5;
+
+    if (Math.floor(time * 10) % 5 === 0) {
+      freqUi.innerText = (144.0 + (Math.random() * 2 - 1) + randomSurge * 15).toFixed(1);
+      /* 63/64 ruling: integrity approaches but never reaches 64 */
+      memUi.innerText = (62.6 + Math.random() * 0.9).toFixed(1) + '%';
+    }
+
+    masterGroup.position.y = Math.sin(time * 0.5) * 0.1;
+
+    networkShell.rotation.y = time * 0.1;
+    networkShell.rotation.x = Math.sin(time * 0.15) * 0.1;
+    networkShell.rotation.z = Math.cos(time * 0.1) * 0.05;
+
+    signalCore.rotation.y = -time * 0.25;
+    signalCore.rotation.x = Math.cos(time * 0.2) * 0.15;
+
+    centralCore.rotation.x = time * 1.5;
+    centralCore.rotation.y = time * 1.2;
+    centralCore.rotation.z = time * 0.38;
+    centralCore.scale.setScalar(1.0 + Math.sin(time * 8.0) * 0.045 + randomSurge * 0.16);
+
+    coreWire.rotation.x = -time * 1.1;
+    coreWire.rotation.y = time * 1.35;
+    coreWire.scale.setScalar(1.0 + Math.sin(time * 6.0) * 0.035 + randomSurge * 0.11);
+
+    coreHalo.scale.setScalar(1.0 + Math.sin(time * 3.4) * 0.02 + randomSurge * 0.05);
+    coreHaloMat.opacity = 0.055 + Math.sin(time * 3.1) * 0.015 + randomSurge * 0.03;
+
+    coreLight.intensity = 4.5 + Math.sin(time * 10) * 0.8 + randomSurge * 2.2;
+    violetLight.intensity = 2.2 + Math.sin(time * 4.0) * 0.8 + randomSurge * 2.5;
+    phosphorRim.intensity = 2.0 + Math.sin(time * 2.5) * 0.5;
+
+    animatedElements.rings.forEach((ring, index) => {
+      ring.rotation.x += 0.004 + index * 0.001;
+      ring.rotation.y += 0.003 + index * 0.0015;
+      ring.rotation.z += 0.002 + index * 0.0008;
+      ring.scale.setScalar(1.0 + Math.sin(time * (2.0 + index) + index) * 0.025 + randomSurge * 0.05);
+      ring.material.opacity = ring === ringA ? 0.42 + randomSurge * 0.14 : 0.24 + randomSurge * 0.1;
+    });
+
+    dust.rotation.y = time * 0.025;
+
+    animatedElements.nodes.forEach(node => {
+      const s = node.userData.baseScale * (1.0 + 0.15 * Math.sin(time * 5.0 + node.userData.phase) + randomSurge * 0.3);
+      node.scale.setScalar(s);
+    });
+
+    animatedElements.orbs.forEach(orb => {
+      const raw = (time * orb.speed + orb.offset) % 2.0;
+      const t = raw > 1.0 ? 2.0 - raw : raw;
+      const pos = new THREE.Vector3().lerpVectors(orb.a, orb.b, orb.direction === 1 ? t : 1.0 - t);
+      const dir = new THREE.Vector3().subVectors(orb.b, orb.a).normalize();
+      const up = Math.abs(dir.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+      const rightV = new THREE.Vector3().crossVectors(dir, up).normalize();
+      pos.addScaledVector(rightV, Math.sin(time * 15.0 + orb.offset) * 0.02);
+      orb.mesh.position.copy(pos);
+      const flare = Math.sin(time * 10.0 + orb.offset) * 0.5 + 0.5;
+      orb.mesh.scale.setScalar(1.0 + flare * 0.5);
+      orb.glowMat.opacity = 0.3 + flare * 0.4;
+    });
+
+    updateCamera(dt);
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+</script>
+
+<!-- ============================================================
+     OSIRIS.EXE // NODE MAP — shared navigation + transit wipe
+     Injected into every node page. Links carry a hard contact-
+     edge wipe: a phosphor line over a crimson line sweeps the
+     screen (the poles touch, never blend), the page cuts to
+     Duat black, and the next node decompresses in.
+     ============================================================ -->
+<style>
+  #osx-nav {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    translate: -50% 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0.45rem 0.9rem 0.5rem;
+    background: rgba(1, 1, 3, 0.68);
+    border: 1px solid rgba(0, 255, 70, 0.18);
+    border-top: none;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  #osx-nav .osx-label {
+    color: rgba(216, 210, 196, 0.4);
+    margin-right: 0.9rem;
+    padding-right: 0.9rem;
+    border-right: 1px solid rgba(216, 210, 196, 0.14);
+    font-family: 'VT323', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.14em;
+  }
+  #osx-nav a {
+    color: rgba(216, 210, 196, 0.5);
+    text-decoration: none;
+    padding: 0.15rem 0.65rem;
+    position: relative;
+    transition: color 0.15s;
+  }
+  #osx-nav a + a { border-left: 1px solid rgba(216, 210, 196, 0.1); }
+  #osx-nav a:hover { color: #00FF46; text-shadow: 0 0 8px rgba(0, 255, 70, 0.4); }
+  #osx-nav a[aria-current="page"] {
+    color: #00FF46;
+    text-shadow: 0 0 8px rgba(0, 255, 70, 0.45);
+  }
+  #osx-nav a[aria-current="page"]::after {
+    content: '';
+    position: absolute;
+    left: 0.65rem; right: 0.65rem; bottom: -0.28rem;
+    height: 2px;
+    background: linear-gradient(90deg, #00FF46 0 50%, #FF3A1A 50% 100%); /* hard edge */
+    box-shadow: 0 0 8px rgba(0, 255, 70, 0.4);
+  }
+
+  /* transit overlay: the cut between nodes */
+  #osx-transit {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    background: #010103;
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #osx-transit .osx-line {
+    width: 100%;
+    height: 2px;
+    transform: scaleX(0);
+  }
+  #osx-transit .osx-line.sig { background: #00FF46; box-shadow: 0 0 18px rgba(0,255,70,0.8), 0 0 44px rgba(0,255,70,0.35); }
+  #osx-transit .osx-line.net { background: #FF3A1A; box-shadow: 0 0 18px rgba(255,58,26,0.7), 0 0 44px rgba(255,58,26,0.3); }
+  #osx-transit .osx-tag {
+    margin-top: 0.9rem;
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    letter-spacing: 0.3em;
+    color: #0A8A2E;
+    opacity: 0;
+  }
+
+  /* exit: overlay snaps on, lines sweep in, hold black */
+  #osx-transit.osx-out { animation: osxFadeIn 140ms steps(2) forwards; }
+  #osx-transit.osx-out .osx-line { animation: osxSweep 200ms cubic-bezier(0.2, 0, 0.2, 1) 60ms forwards; }
+  #osx-transit.osx-out .osx-tag { animation: osxTagIn 120ms steps(1) 180ms forwards; }
+
+  /* entry: lines already lit, collapse out, overlay flickers off */
+  #osx-transit.osx-in { opacity: 1; animation: osxFlickerOut 420ms steps(3) 160ms forwards; }
+  #osx-transit.osx-in .osx-line { transform: scaleX(1); animation: osxCollapse 260ms cubic-bezier(0.6, 0, 0.9, 1) 120ms forwards; }
+
+  @keyframes osxFadeIn   { to { opacity: 1; } }
+  @keyframes osxSweep    { to { transform: scaleX(1); } }
+  @keyframes osxCollapse { to { transform: scaleX(0); } }
+  @keyframes osxTagIn    { to { opacity: 1; } }
+  @keyframes osxFlickerOut {
+    0% { opacity: 1; }
+    40% { opacity: 0.5; }
+    70% { opacity: 0.85; }
+    100% { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #osx-transit, #osx-transit.osx-in, #osx-transit.osx-out { animation: none !important; opacity: 0 !important; }
+    #osx-transit .osx-line { animation: none !important; }
+  }
+
+  @media (max-width: 640px) {
+    #osx-nav { font-size: 0.5rem; padding: 0.35rem 0.5rem 0.4rem; }
+    #osx-nav .osx-label { display: none; }
+    #osx-nav a { padding: 0.15rem 0.45rem; }
+  }
+</style>
+
+<nav id="osx-nav" aria-label="OSIRIS.EXE node map">
+  <a class="osx-label" href="index.html" style="text-decoration:none; color:inherit;">NODE MAP</a>
+  <a href="osiris-signal-construct.html" data-node="construct">01 Construct</a>
+  <a href="osiris-signal-archive.html" data-node="archive">02 Archive</a>
+  <a href="osiris-signal-archive-promo.html" data-node="promo">03 Reel</a>
+  <a href="osiris-six-faces.html" data-node="faces">04 Six Faces</a>
+  <a href="osiris-singularity-ignition.html" data-node="ignition">05 Ignition</a>
+  <a href="../" data-node="terminal">◂ Terminal</a>
+</nav>
+
+<div id="osx-transit" aria-hidden="true">
+  <div class="osx-line sig"></div>
+  <div class="osx-line net"></div>
+  <div class="osx-tag">TRANSIT</div>
+</div>
+
+<script data-osx-page="construct">
+(function () {
+  var PAGE = document.currentScript.getAttribute('data-osx-page');
+  var nav = document.getElementById('osx-nav');
+  var transit = document.getElementById('osx-transit');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* mark the node you are standing on */
+  nav.querySelectorAll('a').forEach(function (a) {
+    if (a.getAttribute('data-node') === PAGE) a.setAttribute('aria-current', 'page');
+  });
+
+  /* entry: decompress in from the cut */
+  if (!reduced) {
+    transit.classList.add('osx-in');
+    transit.addEventListener('animationend', function (e) {
+      if (e.target === transit) transit.classList.remove('osx-in');
+    });
+  }
+
+  /* exit: pole sweep, then navigate */
+  nav.addEventListener('click', function (e) {
+    var a = e.target.closest('a');
+    if (!a || a.hasAttribute('aria-current')) { if (a) e.preventDefault(); return; }
+    e.preventDefault();
+    var href = a.getAttribute('href');
+    if (reduced) { window.location.href = href; return; }
+    transit.classList.remove('osx-in');
+    /* restart animation cleanly */
+    void transit.offsetWidth;
+    transit.classList.add('osx-out');
+    setTimeout(function () { window.location.href = href; }, 340);
+  });
+
+  /* if the page is restored from bfcache with the overlay up, clear it */
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) {
+      transit.classList.remove('osx-out', 'osx-in');
+    }
+  });
+})();
+</script>
+
+  <script src="/osiris-audio.js" data-track="/audio/osiris-on-paseo.mp3"></script>
+  <script src="/instagram-link.js" defer></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2fb58711acdda52',t:'MTc4NzUwMDk4Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
