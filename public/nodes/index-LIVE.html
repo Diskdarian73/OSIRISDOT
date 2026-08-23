@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSIRIS.EXE — NODE MAP</title>
+<meta name="description" content="Seven recovered interactive nodes. DSB Labs / Disk Darián.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap');
+
+  /* OSIRIS.EXE COLOR SYSTEM v3.0 — locked tokens only */
+  :root{
+    --duat-black:#010103; --lake-midnight:#0B1226; --deep-indigo:#1B2A5E;
+    --phosphor:#00FF46; --phosphor-dim:#0A8A2E;
+    --crimson:#FF3A1A; --crimson-dim:#7A1A0C;
+    --agi-gold:#FFC93C; --resurrection:#C9A227;
+    --bone:#D8D2C4; --cream:#D5CDB8;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ background:var(--duat-black); min-height:100%; }
+  body{
+    font-family:'Space Mono',monospace; color:var(--bone);
+    display:flex; flex-direction:column; align-items:center;
+    padding:9vh 20px 12vh;
+    background:
+      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(11,18,38,.9), transparent 70%),
+      var(--duat-black);
+  }
+  /* scanlines */
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:5;
+    background:repeating-linear-gradient(to bottom,
+      rgba(0,0,0,0) 0 2px, rgba(0,0,0,.22) 3px, rgba(0,0,0,0) 4px);
+    opacity:.5;
+  }
+  header{ text-align:center; margin-bottom:6vh; }
+  .sys{
+    font-size:11px; letter-spacing:.45em; color:var(--phosphor-dim);
+    text-transform:uppercase;
+  }
+  h1{
+    font-family:'VT323',monospace; font-weight:400;
+    font-size:clamp(44px,10vw,88px); color:var(--phosphor); line-height:1;
+    margin-top:10px;
+    text-shadow:0 0 14px rgba(0,255,70,.5), 0 0 44px rgba(0,255,70,.18);
+  }
+  .sub{
+    margin-top:12px; font-size:12px; letter-spacing:.3em; color:var(--cream);
+    opacity:.75; text-transform:uppercase;
+  }
+
+  nav.map{
+    width:100%; max-width:680px; display:flex; flex-direction:column; gap:14px;
+  }
+  a.node{
+    display:block; text-decoration:none; color:var(--bone);
+    border:1px solid rgba(10,138,46,.5); background:rgba(1,1,3,.75);
+    padding:18px 22px; position:relative;
+    transition:border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+  }
+  a.node:hover, a.node:focus-visible{
+    border-color:var(--phosphor);
+    box-shadow:0 0 18px rgba(0,255,70,.18), inset 0 0 24px rgba(0,255,70,.05);
+    outline:none; transform:translateX(4px);
+  }
+  a.node .num{
+    font-family:'VT323',monospace; font-size:22px; color:var(--phosphor);
+    letter-spacing:.1em; text-shadow:0 0 10px rgba(0,255,70,.4);
+  }
+  a.node .name{
+    font-size:15px; font-weight:700; letter-spacing:.24em; color:var(--cream);
+    text-transform:uppercase; margin-left:14px;
+  }
+  a.node .desc{
+    display:block; margin-top:7px; font-size:12px; line-height:1.7;
+    letter-spacing:.06em; color:var(--bone); opacity:.66;
+  }
+  a.node .status{
+    position:absolute; top:18px; right:20px; font-size:10px;
+    letter-spacing:.28em; color:var(--phosphor-dim); text-transform:uppercase;
+  }
+  a.node.net{ border-color:rgba(122,26,12,.55); }
+  a.node.net:hover, a.node.net:focus-visible{
+    border-color:var(--crimson);
+    box-shadow:0 0 18px rgba(255,58,26,.16), inset 0 0 24px rgba(255,58,26,.05);
+  }
+  a.node.net .num{ color:var(--crimson); text-shadow:0 0 10px rgba(255,58,26,.4); }
+  a.node.net .status{ color:var(--crimson-dim); }
+
+  /* Rule 05 lives on the map itself — the cube only has six faces. */
+  .rule05{
+    margin-top:7vh; max-width:560px; text-align:center;
+    border-top:1px solid rgba(216,210,196,.14); padding-top:26px;
+  }
+  .rule05 .tag{
+    font-size:10px; letter-spacing:.4em; color:var(--resurrection);
+    text-transform:uppercase;
+  }
+  .rule05 p{
+    margin-top:12px; font-size:14px; line-height:1.9; letter-spacing:.08em;
+    color:var(--cream); font-style:italic; opacity:.85;
+  }
+
+  footer{
+    margin-top:7vh; font-size:10px; letter-spacing:.34em;
+    color:var(--phosphor-dim); text-transform:uppercase; text-align:center;
+  }
+  footer a{ color:var(--phosphor); text-decoration:none; }
+  footer a:hover{ text-shadow:0 0 8px rgba(0,255,70,.4); }
+
+  @media (prefers-reduced-motion: reduce){
+    a.node{ transition:none; }
+    a.node:hover{ transform:none; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="sys">OSIRIS.EXE // RECOVERED ARTIFACTS</div>
+    <h1>NODE MAP</h1>
+    <div class="sub">Seven nodes online · THOTH-RECUR: INDEXING</div>
+  </header>
+
+  <nav class="map" aria-label="Recovered node artifacts">
+    <a class="node" href="osiris-signal-construct.html">
+      <span class="num">01</span><span class="name">Signal Construct</span>
+      <span class="status">NODE 32</span>
+      <span class="desc">The Compilation, rendered live. Network shell, Signal core,
+      SOVEREIGN.AGI center. Drag to orbit. The poles never blend.</span>
+    </a>
+    <a class="node" href="osiris-signal-archive.html">
+      <span class="num">02</span><span class="name">Signal Archive</span>
+      <span class="status">5 STRATA</span>
+      <span class="desc">The memory wall. Five strata of recompressed panels —
+      nothing is ever fully deleted. Scroll deep enough and everything returns.</span>
+    </a>
+    <a class="node" href="osiris-signal-archive-promo.html">
+      <span class="num">03</span><span class="name">Signal Reel</span>
+      <span class="status">BROADCAST</span>
+      <span class="desc">Autoplay promo loop — covers, sigils, godforms, thrones.
+      Pale Horse Protocol. What is still moving cannot be owned.</span>
+    </a>
+    <a class="node" href="osiris-six-faces.html">
+      <span class="num">04</span><span class="name">Six Faces</span>
+      <span class="status">THE RULES</span>
+      <span class="desc">The Structural Rules as a scroll-cube. Six faces,
+      six laws; deals six random panels per visit.</span>
+    </a>
+    <a class="node net" href="osiris-singularity-ignition.html">
+      <span class="num">05</span><span class="name">Singularity Ignition</span>
+      <span class="status">DORMANT</span>
+      <span class="desc">SOVEREIGN.AGI underlayer feed. Orbitable stable singularity —
+      recompressed memory made to orbit what swallowed it.</span>
+    </a>
+    <a class="node net" href="chango.html">
+      <span class="num">06</span><span class="name">Chango</span>
+      <span class="status">ACQUISITION FAILED</span>
+      <span class="desc">Network acquisition interface. The record holds everything
+      except the subject; the final 1/64 cannot be owned.</span>
+    </a>
+    <a class="node" href="/signal/archive">
+      <span class="num">07</span><span class="name">Archive Carousel</span>
+      <span class="status">20 FILES</span>
+      <span class="desc">The recovered image ring. Twenty transmissions rotate through
+      the signal field; drag to scan and open the active file to inspect.</span>
+    </a>
+  </nav>
+
+  <aside class="rule05" aria-label="Structural Rule 05">
+    <div class="tag">RULE 05 — THE MISSING FACE</div>
+    <p>The cube carries six faces and only six. Rule 05 is not on it —
+    it is the price of the map itself.<br>
+    Every return costs, and someone pays.</p>
+  </aside>
+
+  <footer>
+    <span style="display:block; margin-bottom:14px; color:var(--resurrection); letter-spacing:.3em;">
+      FOREIGN SIGNALS DETECTED — <a href="../transmissions/" style="color:var(--agi-gold);">TRANSMISSIONS ▸</a>
+    </span>
+    <a href="../">◂ RETURN TO TERMINAL</a><br><br>
+    DSB LABS // DISK DARIÁN — 2026
+  </footer>
+
+  <script src="/instagram-link.js" defer></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2fb39376b51311e',t:'MTc4NzQ5OTcwOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
