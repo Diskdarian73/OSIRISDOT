@@ -99,9 +99,41 @@ The prompt bodies are untouched. `emoji:` and `vibe:` were left in place — Cla
 - **`research-synthesist`** — Research Synthesist  
   Turns a pile of sources into an honestly weighted map — flags what the evidence does not actually support. *(1,506 words)*
 
-## Two cautions
+## The OSIRIS.EXE conversion
 
-- **The numbers inside are unsourced.** Several of these agents state statistics as fact with no citation. Treat any figure one produces as a claim to verify — especially in `finance-tax-strategist`.
-- **None of these declare a `tools:` field**, so each inherits full tool access when installed. Add a `tools:` line to any you want to keep away from a shell.
+Every agent in this repo has been converted beyond the frontmatter fixes above.
+Two changes, applied to all 25:
 
-Source: https://github.com/msitarzewski/agency-agents · MIT licence
+**A canon-lock preamble is prepended to each body**, ahead of the agent's own
+prompt, declaring itself binding over everything that follows. It carries the
+banned terms (BLOOM, Aaru, Thanatos, Lattice, `#7dffb0`), the locked color tokens
+and the never-blend rule, the dates that get missed (Dec 1982 not 1987; 1993 not
+1994; MEMORY INTEGRITY at 63%), the naming and caption rules, the eight Rules of
+the World, and the Chicago setting facts. It also carries a scope line: these
+agents advise and draft, they do not deploy and they do not decide what ships.
+Frontmatter gains `canon_lock: v4.1` so the version is visible at a glance.
+
+**Each agent now declares `tools:`.** Twenty-two get
+`Read, Write, Edit, Grep, Glob, WebSearch, WebFetch` — no shell. Three get `Bash`
+because their work genuinely requires running things:
+
+| Agent | Tools | Why |
+|---|---|---|
+| `specialized-document-generator` | + `Bash`, no web | It writes and runs the code that builds PDFs. |
+| `testing-evidence-collector` | `Read, Grep, Glob, Bash, WebFetch` | It gathers proof; no `Write`, because it collects rather than changes. |
+| `testing-reality-checker` | `Read, Grep, Glob, Bash` | It has to actually run the thing to refuse to certify it. |
+
+The prompt bodies themselves are still untouched.
+
+## The one caution that remains
+
+**The numbers inside are unsourced.** Several of these agents state statistics as
+fact with no citation — they were written for a general agency audience, not for
+this studio. The canon preamble now instructs each agent to treat every figure in
+its own body as an unverified claim and to mark it as such rather than repeating
+it as established truth. That reduces the risk; it does not remove it. Check
+anything numeric that reaches a deliverable, especially from
+`finance-tax-strategist`.
+
+Source: https://github.com/msitarzewski/agency-agents · MIT licence.
+Licensing boundary against the AGPL agent stack: `agent-stack/LICENSES.md`.

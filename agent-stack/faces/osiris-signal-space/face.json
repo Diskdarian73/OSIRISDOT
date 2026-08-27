@@ -1,0 +1,11 @@
+{
+  "name": "osiris-signal-space",
+  "display_name": "OSIRIS Signal Space",
+  "description": "The recovered carrier field. Idles as a drifting semantic archive, locks on when the mic opens, spins under thought, and floods phosphor while OSIRIS speaks.",
+  "author": "Disk Darian / DSB Labs",
+  "entry": "index.html",
+  "states": ["idle", "listening", "thinking", "speaking"],
+  "drive": "postMessage",
+  "reduced_motion": true,
+  "_note": "ai-visualizer owns the real schema for this file. At install time the conductor must read the shipped faces' face.json in ai-visualizer/faces/ and reconcile these key names against it, rather than trusting this file's spelling. The entry point and the four state names are what actually matter; everything else here is metadata."
+}
