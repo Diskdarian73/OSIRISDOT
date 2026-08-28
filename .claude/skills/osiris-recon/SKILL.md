@@ -45,10 +45,20 @@ on one lane takes under 2.
 
 Only when the user asks for a brief, a shareable report, or something to look at:
 
+Use `--output` rather than shell redirection — it writes UTF-8 directly and
+creates the directory for you:
+
 ```bash
-mkdir -p briefs
-python3 "$SKILL_DIR/scripts/recon.py" --emit html > "briefs/recon-$(date +%F).html"
+python3 "$SKILL_DIR/scripts/recon.py" --emit html -o "briefs/recon-$(date +%F).html"
 ```
+
+```powershell
+# PowerShell
+python3 .claude\skills\osiris-recon\scripts\recon.py --emit html -o "briefs\recon.html"
+```
+
+Redirecting with `>` works too, but on Windows it is the fragile path: see
+*Platform notes*.
 
 The file is self-contained — no build step, no assets, no network at view time,
 consistent with every other page in this repo. Give the path back and stop; do
@@ -64,7 +74,19 @@ not paste the HTML into chat.
 | `--window` | `30` | lookback in days |
 | `--min-engagement` | `10` | floor on score+comments for measured items; `0` keeps all |
 | `--limit` | `0` | cap items after ranking |
+| `-o`, `--output` | — | write to this file (UTF-8), creating parent dirs |
 | `-v` | off | per-source progress on stderr |
+
+## Platform notes
+
+Windows defaults stdout to the locale codepage (cp1252 on most machines), which
+cannot encode the pole glyphs, the rule characters, or the emoji that turn up in
+post titles. The engine forces UTF-8 on stdout and stderr at startup, so both
+`>` redirection and `--output` are safe — but `--output` is still preferred: it
+creates missing directories, and `>` in PowerShell fails outright if the target
+directory does not exist.
+
+Paths in this file use forward slashes; PowerShell accepts them as arguments.
 
 ## The lanes
 

@@ -24,6 +24,17 @@ from typing import Any, Dict, List
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Windows defaults stdout to the locale codepage (cp1252 on most machines),
+# which cannot encode the pole glyphs, the rule characters, or the emoji that
+# turn up in post titles — redirecting to a file then dies with
+# UnicodeEncodeError. Force UTF-8 on both streams before anything writes.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
 from lib import brief, github, hackernews, lanes, net, reddit, score  # noqa: E402
 
 DEPTH = {
@@ -141,6 +152,10 @@ def main() -> int:
                          f"(default: {score.MIN_ENGAGEMENT}, 0 keeps everything)")
     ap.add_argument("--limit", type=int, default=0,
                     help="cap items retained after ranking (0 = no cap)")
+    ap.add_argument("-o", "--output", metavar="PATH",
+                    help="write to this file (UTF-8) instead of stdout, "
+                         "creating parent directories as needed. Avoids shell "
+                         "redirection, which is encoding-fragile on Windows.")
     ap.add_argument("--list-lanes", action="store_true",
                     help="print the lane map and exit")
     ap.add_argument("-v", "--verbose", action="store_true",
@@ -166,11 +181,24 @@ def main() -> int:
         report["clusters"] = score.cluster(report["items"])
 
     if args.emit == "json":
-        print(json.dumps(report, indent=2, default=str))
+        text = json.dumps(report, indent=2, default=str)
     elif args.emit == "html":
-        print(brief.html_brief(report))
+        text = brief.html_brief(report)
     else:
-        print(brief.terminal(report))
+        text = brief.terminal(report)
+
+    if args.output:
+        path = os.path.abspath(args.output)
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(text + "\n")
+        # The path is the completion message; it goes to stderr so stdout
+        # stays clean if someone redirects anyway.
+        sys.stderr.write(f"wrote {path}\n")
+    else:
+        print(text)
     return 0
 
 
