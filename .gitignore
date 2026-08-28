@@ -1,3 +1,13 @@
-.claude/
+# Local Claude Code state stays out of the repo, but project skills are part
+# of it — they are tooling the whole project shares.
+.claude/*
+!.claude/skills/
+
+__pycache__/
+*.pyc
+
+# Generated recon briefs are artifacts, not source.
+briefs/
+
 Thumbs.db
 Desktop.ini
